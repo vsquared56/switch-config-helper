@@ -1,0 +1,29 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+  name: default
+
+steps:
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '7.0'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: '**/*.csproj'
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      Import-Module .\bin\Debug\netstandard2.0\Switch_Config_Helper.dll
+      
+      Test-SampleCmdlet -FavoriteNumber 5
