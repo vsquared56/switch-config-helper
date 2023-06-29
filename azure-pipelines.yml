@@ -11,19 +11,19 @@ pool:
 
 steps:
 - task: UseDotNet@2
-  name: Use dotnet 7.x
+  displayName: Use dotnet 7.x
   inputs:
     packageType: 'sdk'
     version: '7.x'
 
 - task: DotNetCoreCLI@2
-  name: dotnet build
+  displayName: dotnet build
   inputs:
     command: 'build'
     projects: '**/*.csproj'
 
 - task: DotNetCoreCLI@2
-  name: dotnet publish
+  displayName: dotnet publish
   inputs:
     command: 'publish'
     projects: '**/*.csproj'
@@ -31,7 +31,7 @@ steps:
     zipAfterPublish: False
 
 - task: PowerShell@2
-  name: Test PowerShell cmdlet
+  displayName: Test PowerShell cmdlet
   inputs:
     targetType: 'inline'
     script: |
