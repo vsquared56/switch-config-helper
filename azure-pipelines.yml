@@ -48,6 +48,6 @@ steps:
   inputs:
     targetType: 'inline'
     script: |
-      Import-Module .\bin\Debug\netstandard2.0\publish\Switch_Config_Helper.dll
+      Import-Module .\bin\Debug\netstandard2.0\publish\SwitchConfigHelper.psd1
       
       Test-SampleCmdlet -FavoriteNumber 5
