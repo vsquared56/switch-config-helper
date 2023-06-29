@@ -25,6 +25,7 @@ steps:
     command: 'publish'
     projects: '**/*.csproj'
     publishWebProjects: False
+    zipAfterPublish: False
 
 - task: PowerShell@2
   inputs:
