@@ -40,8 +40,7 @@ steps:
       $comparison = Compare-Object $psd1['RequiredAssemblies'] $published_assemblies
       If ($comparison)
       {
-        Write-Error "The RequiredAssemblies in the PowerShell module manifest do not match those in the publish folder."
-        Write-Error $comparison
+        Write-Error "The RequiredAssemblies in the PowerShell module manifest do not match those in the publish folder: $comparison"
       }
 
 - task: PowerShell@2
