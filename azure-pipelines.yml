@@ -20,10 +20,15 @@ steps:
     command: 'build'
     projects: '**/*.csproj'
 
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'publish'
+    projects: '**/*.csproj'
+
 - task: PowerShell@2
   inputs:
     targetType: 'inline'
     script: |
-      Import-Module .\bin\Debug\netstandard2.0\Switch_Config_Helper.dll
+      Import-Module .\bin\Debug\netstandard2.0\publish\Switch_Config_Helper.dll
       
       Test-SampleCmdlet -FavoriteNumber 5
