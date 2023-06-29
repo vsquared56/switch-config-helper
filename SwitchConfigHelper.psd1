@@ -54,7 +54,7 @@ PowerShellVersion = '5.1'
 # RequiredModules = @()
 
 # Assemblies that must be loaded prior to importing this module
-RequiredAssemblies = 'System.Reflection.Emit.dll', 
+RequiredAssemblies = 'Cottle.dll','System.Reflection.Emit.dll', 
                'System.Reflection.Emit.ILGeneration.dll', 
                'System.Reflection.Emit.Lightweight.dll', 
                'System.Reflection.TypeExtensions.dll'
