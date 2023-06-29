@@ -31,6 +31,20 @@ steps:
     zipAfterPublish: False
 
 - task: PowerShell@2
+  displayName: Verify psd1 RequiredAssemblies
+  inputs:
+    targetType: 'inline'
+    script: |
+      $psd1 = Import-PowerShellDataFile .\bin\Debug\netstandard2.0\SwitchConfigHelper.psd1
+      $published_assemblies = (Get-ChildItem -File -Path .\bin\Debug\netstandard2.0\publish\* -Include *.dll -Exclude $psd1['RootModule']).Name
+      $comparison = Compare-Object $psd1['RequiredAssemblies'] $published_assemblies
+      If (-not $comparison)
+      {
+        Write-Error "The RequiredAssemblies in the PowerShell module manifest do not match those in the publish folder."
+        Write-Error $comparison
+      }
+
+- task: PowerShell@2
   displayName: Test PowerShell cmdlet
   inputs:
     targetType: 'inline'
