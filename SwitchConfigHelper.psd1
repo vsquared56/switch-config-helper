@@ -9,7 +9,7 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'Switch_Config_Helper.dll'
+RootModule = 'SwitchConfigHelper.dll'
 
 # Version number of this module.
 ModuleVersion = '0.0.0'

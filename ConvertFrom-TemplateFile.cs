@@ -5,11 +5,11 @@ using Cottle;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Switch_Config_Helper
+namespace SwitchConfigHelper
 {
-    [Cmdlet(VerbsDiagnostic.Test, "SampleCmdlet")]
+    [Cmdlet(VerbsData.ConvertFrom, "TemplateFile")]
     [OutputType(typeof(string))]
-    public class TestSampleCmdletCommand : PSCmdlet
+    public class ConvertFromTemplateFileCommand : PSCmdlet
     {
         [Parameter(
             Mandatory = true,

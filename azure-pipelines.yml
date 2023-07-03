@@ -51,4 +51,4 @@ steps:
     script: |
       Import-Module .\bin\Debug\netstandard2.0\publish\SwitchConfigHelper.psd1
       
-      Test-SampleCmdlet -TemplatePath .\tests\test_template.txt
+      ConvertFrom-TemplateFile -TemplatePath .\tests\test_template.txt
