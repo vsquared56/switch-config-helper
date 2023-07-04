@@ -5,6 +5,7 @@
 
 trigger:
 - main
+- feature/*
 
 pool:
   name: default
@@ -50,4 +51,4 @@ steps:
     script: |
       Import-Module .\bin\Debug\netstandard2.0\publish\SwitchConfigHelper.psd1
       
-      Test-SampleCmdlet -FavoriteNumber 5
+      ConvertFrom-TemplateFile -TemplatePath .\tests\test_template.txt
