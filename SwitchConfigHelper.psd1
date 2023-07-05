@@ -56,7 +56,7 @@ PowerShellVersion = '5.1'
 # Assemblies that must be loaded prior to importing this module
 RequiredAssemblies = 'Scriban.dll','Microsoft.CSharp.dll',
     'System.Runtime.CompilerServices.Unsafe.dll', 
-    'ystem.Threading.Tasks.Extensions.dll'
+    'System.Threading.Tasks.Extensions.dll'
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
 # ScriptsToProcess = @()
