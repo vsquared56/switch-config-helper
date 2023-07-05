@@ -37,11 +37,14 @@ steps:
     targetType: 'inline'
     script: |
       $psd1 = Import-PowerShellDataFile .\bin\Debug\netstandard2.0\SwitchConfigHelper.psd1
-      $published_assemblies = (Get-ChildItem -File -Path .\bin\Debug\netstandard2.0\publish\* -Include *.dll -Exclude $psd1['RootModule']).Name
-      $comparison = Compare-Object $psd1['RequiredAssemblies'] $published_assemblies
+      $required_assemblies = $psd1['RequiredAssemblies'] | Sort-Object
+      $published_assemblies = (Get-ChildItem -File -Path .\bin\Debug\netstandard2.0\publish\* -Include *.dll -Exclude $psd1['RootModule']).Name | Sort-Object
+      $comparison = Compare-Object $required_assemblies $published_assemblies
       If ($comparison)
       {
-        Write-Error "The RequiredAssemblies in the PowerShell module manifest do not match those in the publish folder: $comparison"
+        Write-Host "PSD1 assemblies on the left.  Published assemblies on the right."
+        $comparison
+        Write-Error "The RequiredAssemblies in the PowerShell module manifest do not match those in the publish folder."
       }
 
 - task: PowerShell@2
