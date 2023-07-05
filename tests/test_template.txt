@@ -1,1 +1,22 @@
-Hello {who}, stay awhile and listen!
+{set acls to [
+    "43": ["net":"172.20.43.0","mask":"24"],
+    "49": ["net":"172.20.49.0","mask":"24"],
+    "51": ["net":"172.20.51.0","mask":"24"],
+    "55": ["net":"172.20.55.0","mask":"24"]
+]}
+
+{set allow_ad_dns_lookups(subnet) to:{
+if 1:
+  remark Allow DNS Lookups
+  permit udp {subnet.net}/{subnet.mask} host 172.16.71.71 eq dns
+}}
+
+{for index,subnet in acls:
+ip access-list extended acl_vlan{index}
+{allow_ad_dns_lookups(subnet)}
+{if index = "43" || index = "55":
+  remark Custom rule for subnet {subnet.net}
+  permit udp {subnet.net}/{subnet.mask} host 172.16.71.71 eq 8080
+}
+!
+}
