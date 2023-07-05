@@ -54,10 +54,11 @@ PowerShellVersion = '5.1'
 # RequiredModules = @()
 
 # Assemblies that must be loaded prior to importing this module
-RequiredAssemblies = 'Scriban.dll','System.Reflection.Emit.dll', 
-               'System.Reflection.Emit.ILGeneration.dll', 
-               'System.Reflection.Emit.Lightweight.dll', 
-               'System.Reflection.TypeExtensions.dll'
+RequiredAssemblies = 'Scriban.dll','Microsoft.CSharp.dll',
+    'System.Reflection.Emit.dll', 
+    'System.Reflection.Emit.ILGeneration.dll', 
+    'System.Reflection.Emit.Lightweight.dll', 
+    'System.Reflection.TypeExtensions.dll'
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
 # ScriptsToProcess = @()
