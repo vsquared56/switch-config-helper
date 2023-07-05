@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
-using Cottle;
+using Scriban;
 using System.Collections.Generic;
 using System.IO;
 
@@ -25,19 +25,19 @@ namespace SwitchConfigHelper
 
         protected override void ProcessRecord()
         {
-            using (StreamReader templateReader = File.OpenText(TemplatePath))
+            var template = Template.Parse(File.ReadAllText(TemplatePath), TemplatePath);
+            if (template.HasErrors)
             {
-                var documentResult = Document.CreateDefault(templateReader); // Create from template string
-                var document = documentResult.DocumentOrThrow; // Throws ParseException on error
-
-                var context = Context.CreateBuiltin(new Dictionary<Value, Value>
+                foreach (var error in template.Messages)
                 {
-                    ["who"] = "my friend" // Declare new variable "who" with value "my friend"
-                });
-
-                var output = document.Render(context);
-                WriteObject(output);
+                    Console.WriteLine(error);
+                }
+                return;
             }
+
+            var result = template.Render(new { Name = "World" }); // => "Hello World!" 
+
+            WriteObject(result);
         }
 
         // This method will be called once at the end of pipeline execution; if no input is received, this method is not called

@@ -1,1 +1,37 @@
-Hello {who}, stay awhile and listen!
+{{
+    acls = [ 
+        {
+            name: "acl_vlan10",
+            cidr: "172.20.10.0/24"
+        }, 
+        {
+            name: "acl_vlan20",
+            cidr: "172.20.20.0/24"
+        },
+        {
+            name: "acl_vlan30",
+            cidr: "172.20.30.0/24"
+        }
+    ]
+}}
+
+{{~ func allow_ad_dns_queries ~}}
+  remark Allow DNS lookups using local DNS servers
+  permit udp {{$.cidr}} host 172.16.71.71 eq dns
+  remark Allow DNS lookups using local DNS servers
+  permit udp {{$.cidr}} host 172.16.71.80 eq dns
+  remark Allow DNS lookups using local DNS servers
+  permit udp {{$.cidr}} host 172.20.71.65 eq dns
+  remark Allow DNS lookups using local DNS servers
+  permit udp {{$.cidr}} host 172.20.71.80 eq dns
+{{~ end ~}}
+
+{{~ for acl in acls ~}}
+ip access-list extended {{acl.name}}
+  {{~ allow_ad_dns_queries cidr: acl.cidr ~}}
+  {{~ if acl.name == "acl_vlan20" ~}}
+  remark Custom ACL for {{acl.name}}
+  permit udp {{acl.cidr}} host 172.20.71.80 eq 8080
+  {{~ end ~}}
+!
+{{~ end ~}}
