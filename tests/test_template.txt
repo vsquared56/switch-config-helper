@@ -1,37 +1,55 @@
 {{
-    acls = [ 
-        {
+    acls = {
+        "acl_vlan10" : {
             name: "acl_vlan10",
-            cidr: "172.20.10.0/24"
+            cidr: "172.20.10.0/24",
+            gateway: "172.20.10.1",
+            active_directory: true
         }, 
-        {
+        "acl_vlan20" : {
             name: "acl_vlan20",
-            cidr: "172.20.20.0/24"
+            cidr: "172.20.20.0/24",
+            gateway: "172.20.20.1",
+            active_directory: false
         },
-        {
+        "acl_vlan30" : {
             name: "acl_vlan30",
-            cidr: "172.20.30.0/24"
+            cidr: "172.20.30.0/24",
+            gateway: "172.20.30.1",
+            active_directory: true
         }
-    ]
+    }
 }}
 
+{{all_dcs = ["172.16.8.8","172.16.8.4","172.20.8.8","172.20.8.4"]}}
+
 {{~ func allow_ad_dns_queries ~}}
+{{~ for dc in all_dcs ~}}
   remark Allow DNS lookups using local DNS servers
-  permit udp {{$.cidr}} host 172.16.71.71 eq dns
-  remark Allow DNS lookups using local DNS servers
-  permit udp {{$.cidr}} host 172.16.71.80 eq dns
-  remark Allow DNS lookups using local DNS servers
-  permit udp {{$.cidr}} host 172.20.71.65 eq dns
-  remark Allow DNS lookups using local DNS servers
-  permit udp {{$.cidr}} host 172.20.71.80 eq dns
+  permit udp {{$.acl.cidr}} host {{dc}} eq dns
+  remark Allow LDAP to domain controllers
+  permit tcp {{$.acl.cidr}} host {{dc}} eq ldap
+{{~ end ~}}
 {{~ end ~}}
 
-{{~ for acl in acls ~}}
-ip access-list extended {{acl.name}}
-  {{~ allow_ad_dns_queries cidr: acl.cidr ~}}
+{{~ acl = acls.acl_vlan10 ~}}
+ip access-list extended "acl_vlan10"
+  {{~ allow_ad_dns_queries acl: acl ~}}
   {{~ if acl.name == "acl_vlan20" ~}}
   remark Custom ACL for {{acl.name}}
-  permit udp {{acl.cidr}} host 172.20.71.80 eq 8080
+  permit udp {{acl.cidr}} host 172.20.10.10 eq 8080
+  remark Allow ICMP Ping on vlan
+  permit icmp {{acl.cidr}} 172.20.100.0/24 echo
   {{~ end ~}}
 !
-{{~ end ~}}
+
+{{~ acl = acls.acl_vlan20 ~}}
+ip access-list extended {{ acl.name }}
+  {{~ allow_ad_dns_queries acl: acl ~}}
+  {{~ if acl.name == "acl_vlan20" ~}}
+  remark Custom ACL for {{acl.name}}
+  permit udp {{acl.cidr}} host 172.20.10.10 eq 8080
+  remark Allow ICMP Ping on vlan
+  permit icmp {{acl.cidr}} 172.20.100.0/24 echo
+  {{~ end ~}}
+!
