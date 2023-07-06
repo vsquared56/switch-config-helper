@@ -35,7 +35,7 @@ namespace SwitchConfigHelper
                 return;
             }
 
-            var result = template.Render(new { Name = "World" }); // => "Hello World!" 
+            var result = template.Render();
 
             WriteObject(result);
         }
