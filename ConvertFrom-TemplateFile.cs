@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Management.Automation;
-using System.Management.Automation.Runspaces;
 using Scriban;
-using System.Collections.Generic;
 using System.IO;
 
 namespace SwitchConfigHelper
@@ -25,6 +23,11 @@ namespace SwitchConfigHelper
 
         protected override void ProcessRecord()
         {
+            var dnsFunctions = new DnsLookups();
+
+            var context = new TemplateContext();
+            context.PushGlobal(dnsFunctions);
+
             var template = Template.Parse(File.ReadAllText(TemplatePath), TemplatePath);
             if (template.HasErrors)
             {
@@ -35,7 +38,7 @@ namespace SwitchConfigHelper
                 return;
             }
 
-            var result = template.Render();
+            var result = template.Render(context);
 
             WriteObject(result);
         }
