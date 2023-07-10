@@ -24,6 +24,12 @@ steps:
     projects: '**/*.sln'
 
 - task: DotNetCoreCLI@2
+  displayName: dotnet test
+  inputs:
+    command: 'test'
+    projects: '**/*.sln'
+
+- task: DotNetCoreCLI@2
   displayName: dotnet publish
   inputs:
     command: 'publish'
