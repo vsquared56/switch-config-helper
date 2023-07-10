@@ -9,8 +9,6 @@ namespace SwitchConfigHelper
     {
         private static int IpCompare(IPAddress x, IPAddress y)
         {
-
-
             Byte[] xBytes = x.GetAddressBytes();
             Byte[] yBytes = y.GetAddressBytes();
 
