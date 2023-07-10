@@ -36,9 +36,9 @@ steps:
   inputs:
     targetType: 'inline'
     script: |
-      $psd1 = Import-PowerShellDataFile .\build\bin\Debug\netstandard2.0\SwitchConfigHelper.psd1
+      $psd1 = Import-PowerShellDataFile .\build\publish\SwitchConfigHelper.psd1
       $required_assemblies = $psd1['RequiredAssemblies'] | Sort-Object
-      $published_assemblies = (Get-ChildItem -File -Path .\build\bin\Debug\netstandard2.0\publish\* -Include *.dll -Exclude $psd1['RootModule']).Name | Sort-Object
+      $published_assemblies = (Get-ChildItem -File -Path .\build\publish\* -Include *.dll -Exclude $psd1['RootModule']).Name | Sort-Object
       $comparison = Compare-Object $required_assemblies $published_assemblies
       If ($comparison)
       {
@@ -52,6 +52,6 @@ steps:
   inputs:
     targetType: 'inline'
     script: |
-      Import-Module .\build\bin\Debug\netstandard2.0\publish\SwitchConfigHelper.psd1
+      Import-Module .\build\publish\SwitchConfigHelper.psd1
       
       ConvertFrom-TemplateFile -TemplatePath .\tests\test_template.txt
