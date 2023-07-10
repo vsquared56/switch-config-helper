@@ -1,8 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using Xunit;
+using FluentAssertions;
 
 namespace SwitchConfigHelper.Tests
 {
@@ -51,7 +49,7 @@ namespace SwitchConfigHelper.Tests
             {
                 var hostname = "localhost";
                 var expectedResult = "127.0.0.1";
-                var result = SwitchConfigHelper.DnsLookups.ResolveA(hostname);
+                var result = SwitchConfigHelper.DnsLookups.ResolveSingleA(hostname);
                 Assert.Equal(expectedResult, result);
             }
 
@@ -60,7 +58,7 @@ namespace SwitchConfigHelper.Tests
             {
                 var hostname = "dns.google"; //Should have A records for 8.8.8.8 and 8.8.4.4
                 var expectedResult = "8.8.4.4"; //Should always resolve the first record numerically
-                var result = SwitchConfigHelper.DnsLookups.ResolveA(hostname);
+                var result = SwitchConfigHelper.DnsLookups.ResolveSingleA(hostname);
                 Assert.Equal(expectedResult, result);
             }
 
@@ -68,12 +66,49 @@ namespace SwitchConfigHelper.Tests
             public void ResolveSingleATestNonexistentDns()
             {
                 var hostname = "nonexistent.example.com"; //Should not resolve
-                Action testWrite = () => SwitchConfigHelper.DnsLookups.ResolveA(hostname);
+                Action testWrite = () => SwitchConfigHelper.DnsLookups.ResolveSingleA(hostname);
                 Assert.Throws<SocketException>(testWrite);
             }
 
             [Fact]
             public void ResolveSingleATestExample()
+            {
+                var hostname = "www.example.com";
+                //Don't check the actual resolved hostname
+                var result = SwitchConfigHelper.DnsLookups.ResolveSingleA(hostname);
+            }
+        }
+
+		public class ResolveMultipleATests
+        {
+            [Fact]
+            public void ResolveMultipleATestLocalhost()
+            {
+                var hostname = "localhost";
+                var expectedResult = new List<string> { "127.0.0.1" };
+                var result = SwitchConfigHelper.DnsLookups.ResolveMultipleA(hostname);
+                result.Should().Equal(expectedResult);
+            }
+
+            [Fact]
+            public void ResolveMultipleATestGoogleDns()
+            {
+                var hostname = "dns.google"; //Should have A records for 8.8.8.8 and 8.8.4.4
+                var expectedResult = new List<string> { "8.8.4.4", "8.8.8.8" };; //Should always be ordered numerically
+                var result = SwitchConfigHelper.DnsLookups.ResolveMultipleA(hostname);
+                result.Should().Equal(expectedResult);
+            }
+
+            [Fact]
+            public void ResolveMultipleATestNonexistentDns()
+            {
+                var hostname = "nonexistent.example.com"; //Should not resolve
+                Action testWrite = () => SwitchConfigHelper.DnsLookups.ResolveMultipleA(hostname);
+                Assert.Throws<SocketException>(testWrite);
+            }
+
+            [Fact]
+            public void ResolveMultipleATestExample()
             {
                 var hostname = "www.example.com";
                 //Don't check the actual resolved hostname
