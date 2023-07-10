@@ -21,13 +21,13 @@ steps:
   displayName: dotnet build
   inputs:
     command: 'build'
-    projects: '**/*.csproj'
+    projects: '**/*.sln'
 
 - task: DotNetCoreCLI@2
   displayName: dotnet publish
   inputs:
     command: 'publish'
-    projects: '**/*.csproj'
+    projects: '**/*.sln'
     publishWebProjects: False
     zipAfterPublish: False
 
@@ -36,9 +36,9 @@ steps:
   inputs:
     targetType: 'inline'
     script: |
-      $psd1 = Import-PowerShellDataFile .\bin\Debug\netstandard2.0\SwitchConfigHelper.psd1
+      $psd1 = Import-PowerShellDataFile .\build\bin\Debug\netstandard2.0\SwitchConfigHelper.psd1
       $required_assemblies = $psd1['RequiredAssemblies'] | Sort-Object
-      $published_assemblies = (Get-ChildItem -File -Path .\bin\Debug\netstandard2.0\publish\* -Include *.dll -Exclude $psd1['RootModule']).Name | Sort-Object
+      $published_assemblies = (Get-ChildItem -File -Path .\build\bin\Debug\netstandard2.0\publish\* -Include *.dll -Exclude $psd1['RootModule']).Name | Sort-Object
       $comparison = Compare-Object $required_assemblies $published_assemblies
       If ($comparison)
       {
@@ -52,6 +52,6 @@ steps:
   inputs:
     targetType: 'inline'
     script: |
-      Import-Module .\bin\Debug\netstandard2.0\publish\SwitchConfigHelper.psd1
+      Import-Module .\build\bin\Debug\netstandard2.0\publish\SwitchConfigHelper.psd1
       
       ConvertFrom-TemplateFile -TemplatePath .\tests\test_template.txt
