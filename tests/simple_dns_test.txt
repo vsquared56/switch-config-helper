@@ -1,1 +1,1 @@
-{{resolve_a("www.google.com")}}
+{{resolve_a("localhost")}}
