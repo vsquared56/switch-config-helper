@@ -10,54 +10,58 @@ trigger:
 pool:
   name: default
 
-steps:
-- task: UseDotNet@2
-  displayName: Use dotnet 7.x
-  inputs:
-    packageType: 'sdk'
-    version: '7.x'
+stages:
+- stage: Build and Test
+  jobs:
+  - job: Build and Test
+    steps:
+    - task: UseDotNet@2
+      displayName: Use dotnet 7.x
+      inputs:
+        packageType: 'sdk'
+        version: '7.x'
 
-- task: DotNetCoreCLI@2
-  displayName: dotnet build
-  inputs:
-    command: 'build'
-    projects: '**/*.sln'
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build
+      inputs:
+        command: 'build'
+        projects: '**/*.sln'
 
-- task: DotNetCoreCLI@2
-  displayName: dotnet test
-  inputs:
-    command: 'test'
-    projects: '**/*.sln'
+    - task: DotNetCoreCLI@2
+      displayName: dotnet test
+      inputs:
+        command: 'test'
+        projects: '**/*.sln'
 
-- task: DotNetCoreCLI@2
-  displayName: dotnet publish
-  inputs:
-    command: 'publish'
-    projects: '**/*.sln'
-    publishWebProjects: False
-    zipAfterPublish: False
+    - task: DotNetCoreCLI@2
+      displayName: dotnet publish
+      inputs:
+        command: 'publish'
+        projects: '**/*.sln'
+        publishWebProjects: False
+        zipAfterPublish: False
 
-- task: PowerShell@2
-  displayName: Verify psd1 RequiredAssemblies
-  inputs:
-    targetType: 'inline'
-    script: |
-      $psd1 = Import-PowerShellDataFile .\build\SwitchConfigHelper\publish\SwitchConfigHelper.psd1
-      $required_assemblies = $psd1['RequiredAssemblies'] | Sort-Object
-      $published_assemblies = (Get-ChildItem -File -Path .\build\SwitchConfigHelper\publish\* -Include *.dll -Exclude $psd1['RootModule']).Name | Sort-Object
-      $comparison = Compare-Object $required_assemblies $published_assemblies
-      If ($comparison)
-      {
-        Write-Host "PSD1 assemblies on the left.  Published assemblies on the right."
-        $comparison | Format-Table | Out-String|% {Write-Host $_}
-        Write-Error "The RequiredAssemblies in the PowerShell module manifest do not match those in the publish folder."
-      }
+    - task: PowerShell@2
+      displayName: Verify psd1 RequiredAssemblies
+      inputs:
+        targetType: 'inline'
+        script: |
+          $psd1 = Import-PowerShellDataFile .\build\SwitchConfigHelper\publish\SwitchConfigHelper.psd1
+          $required_assemblies = $psd1['RequiredAssemblies'] | Sort-Object
+          $published_assemblies = (Get-ChildItem -File -Path .\build\SwitchConfigHelper\publish\* -Include *.dll -Exclude $psd1['RootModule']).Name | Sort-Object
+          $comparison = Compare-Object $required_assemblies $published_assemblies
+          If ($comparison)
+          {
+            Write-Host "PSD1 assemblies on the left.  Published assemblies on the right."
+            $comparison | Format-Table | Out-String|% {Write-Host $_}
+            Write-Error "The RequiredAssemblies in the PowerShell module manifest do not match those in the publish folder."
+          }
 
-- task: PowerShell@2
-  displayName: Test PowerShell cmdlet
-  inputs:
-    targetType: 'inline'
-    script: |
-      Import-Module .\build\SwitchConfigHelper\publish\SwitchConfigHelper.psd1
+    - task: PowerShell@2
+      displayName: Test PowerShell cmdlet
+      inputs:
+        targetType: 'inline'
+        script: |
+          Import-Module .\build\SwitchConfigHelper\publish\SwitchConfigHelper.psd1
       
-      ConvertFrom-TemplateFile -TemplatePath .\tests\test_template.txt
+          ConvertFrom-TemplateFile -TemplatePath .\tests\test_template.txt
