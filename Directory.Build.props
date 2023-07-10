@@ -2,6 +2,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <!-- Build to a folder outside the source folders, making it easier to clean. -->
-    <OutDir>$(MSBuildThisFileDirectory)build\bin\$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>$(MSBuildThisFileDirectory)build\bin\$(Configuration)\</OutDir>
   </PropertyGroup>
 </Project>
