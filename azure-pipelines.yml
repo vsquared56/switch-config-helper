@@ -11,9 +11,9 @@ pool:
   name: default
 
 stages:
-- stage: Build and Test
+- stage: Build
   jobs:
-  - job: Build and Test
+  - job: Build
     steps:
     - task: UseDotNet@2
       displayName: Use dotnet 7.x
@@ -27,11 +27,31 @@ stages:
         command: 'build'
         projects: '**/*.sln'
 
+- stage: Test
+  jobs:
+  - job: Test
+    steps:
+    - task: UseDotNet@2
+      displayName: Use dotnet 7.x
+      inputs:
+        packageType: 'sdk'
+        version: '7.x'
+
     - task: DotNetCoreCLI@2
       displayName: dotnet test
       inputs:
         command: 'test'
         projects: '**/*.sln'
+
+- stage: Publish
+  jobs:
+  - job: Publish
+    steps:
+    - task: UseDotNet@2
+      displayName: Use dotnet 7.x
+      inputs:
+        packageType: 'sdk'
+        version: '7.x'
 
     - task: DotNetCoreCLI@2
       displayName: dotnet publish
