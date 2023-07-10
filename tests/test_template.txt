@@ -21,7 +21,7 @@
     }
 }}
 
-{{all_dcs = ["172.16.8.8","172.16.8.4","172.20.8.8","172.20.8.4"]}}
+{{all_dcs = resolve_multiple_a("ad.rvtn.org")}}
 
 {{~ func allow_ad_dns_queries ~}}
 {{~ for dc in all_dcs ~}}
