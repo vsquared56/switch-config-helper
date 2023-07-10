@@ -26,7 +26,7 @@ namespace SwitchConfigHelper.Tests
 					var results = cmdlet.Invoke().OfType<string>().ToList();
 
 					// Assert.
-					Assert.Equal(results.First(), expectedResult);
+					Assert.Equal(expectedResult, results.First());
 					Assert.True(results.Count == 1);
 				}
 			}
