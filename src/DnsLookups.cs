@@ -1,6 +1,7 @@
 using Scriban;
 using System.Net;
 using System.Net.Sockets;
+using System.Collections.Generic;
 using System;
 
 namespace SwitchConfigHelper
@@ -68,7 +69,7 @@ namespace SwitchConfigHelper
         }
 
         //Resolve a hostname and return one or more IPv4 addresses as an array, sorted numerically.
-        public static Array ResolveMultipleA(string hostname)
+        public static List<string> ResolveMultipleA(string hostname)
         {
             IPAddress[] v4Addresses = Array.FindAll(Dns.GetHostAddresses(hostname), a => a.AddressFamily == AddressFamily.InterNetwork);
             if (v4Addresses.Length == 0)
@@ -78,7 +79,12 @@ namespace SwitchConfigHelper
             else
             {
                 Array.Sort(v4Addresses, IpCompare);
-                return v4Addresses;
+                List<string> result = new List<string>();
+                foreach (IPAddress a in v4Addresses) 
+                {
+                    result.Add(a.ToString());
+                }
+                return result;
             }
         }
     }
