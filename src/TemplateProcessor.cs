@@ -8,6 +8,12 @@ namespace SwitchConfigHelper
     public class TemplateProcessor
     {
         static TemplateContext context = new TemplateContext();
+
+        public Template Parse(string templateText)
+        {
+            return Parse(templateText, "");
+        }
+
         public Template Parse(string templateText, string templatePath)
         {
             var dnsFunctions = new DnsLookups();
