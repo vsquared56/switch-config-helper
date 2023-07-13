@@ -59,7 +59,6 @@ namespace SwitchConfigHelper
                 }
                 output += line.Text;
                 output += System.Environment.NewLine;
-                line.Type
             }
             WriteObject(output);
         }
