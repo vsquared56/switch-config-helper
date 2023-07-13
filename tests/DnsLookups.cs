@@ -4,7 +4,7 @@ using FluentAssertions;
 
 namespace SwitchConfigHelper.Tests
 {
-    public class DnsLookupsTests
+    public class DnsLookupsUnitTests
     {
         public class ResolveATests
         {
@@ -42,7 +42,7 @@ namespace SwitchConfigHelper.Tests
             }
         }
 
-		public class ResolveSingleATests
+        public class ResolveSingleATests
         {
             [Fact]
             public void ResolveSingleATestLocalhost()
@@ -79,7 +79,7 @@ namespace SwitchConfigHelper.Tests
             }
         }
 
-		public class ResolveMultipleATests
+        public class ResolveMultipleATests
         {
             [Fact]
             public void ResolveMultipleATestLocalhost()
@@ -94,7 +94,7 @@ namespace SwitchConfigHelper.Tests
             public void ResolveMultipleATestGoogleDns()
             {
                 var hostname = "dns.google"; //Should have A records for 8.8.8.8 and 8.8.4.4
-                var expectedResult = new List<string> { "8.8.4.4", "8.8.8.8" };; //Should always be ordered numerically
+                var expectedResult = new List<string> { "8.8.4.4", "8.8.8.8" }; ; //Should always be ordered numerically
                 var result = SwitchConfigHelper.DnsLookups.ResolveMultipleA(hostname);
                 result.Should().Equal(expectedResult);
             }
@@ -113,6 +113,25 @@ namespace SwitchConfigHelper.Tests
                 var hostname = "www.example.com";
                 //Don't check the actual resolved hostname
                 var result = SwitchConfigHelper.DnsLookups.ResolveA(hostname);
+            }
+        }
+    }
+
+    public class DnsLookupsIntegrationTests
+    {
+        public class ResolveRecords
+        {
+            [Fact]
+            public void ResolveRecordsInTemplate()
+            {
+                var input = "{{resolve_a(\"localhost\")}},{{resolve_single_a(\"dns.google\")}}";
+                var expectedResult = "127.0.0.1,8.8.4.4";
+
+                var processor = new TemplateProcessor();
+                var template = processor.Parse(input);
+                var result = processor.Render(template);
+                
+                Assert.Equal(expectedResult, result);
             }
         }
     }
