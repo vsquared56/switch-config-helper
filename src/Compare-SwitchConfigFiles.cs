@@ -25,6 +25,14 @@ namespace SwitchConfigHelper
             ValueFromPipelineByPropertyName = false)]
         public string DifferencePath { get; set; }
 
+        [Parameter(
+            Mandatory = false,
+            Position = 2,
+            ValueFromPipeline = false,
+            ValueFromPipelineByPropertyName = false)]
+        [ValidateContextParameter()]
+        public int Context { get; set; } = 0;
+
         protected override void BeginProcessing()
         {
 
@@ -37,30 +45,41 @@ namespace SwitchConfigHelper
             var diffBuilder = new SemanticInlineDiffBuilder(new Differ());
             var diff = diffBuilder.BuildDiffModel(referenceText, differenceText);
 
+            int remainingForwardContext = 0;
             string output = "";
+
             for (int i = 0; i < diff.Lines.Count; i++)
             {
                 var line = diff.Lines[i];
-                if (line.Position.HasValue)
+
+                if (Context == 0)
                 {
-                    output += line.Position.Value;
+                    AddFormattedOutputLine(ref output, line);
+                }
+                else
+                {
+                    if (remainingForwardContext == 0 && (line.Type == ChangeType.Inserted || line.Type == ChangeType.Deleted))
+                    {
+                        for (var j = Math.Max(0, i - Context); j <= i; j++)
+                        {
+                            AddFormattedOutputLine(ref output, diff.Lines[j]);
+                        }
+                        remainingForwardContext = Context;
+                    }
+                    else if (remainingForwardContext > 0)
+                    {
+                        if (line.Type == ChangeType.Inserted || line.Type == ChangeType.Deleted)
+                        {
+                            remainingForwardContext = Context;
+                        }
+                        else
+                        {
+                            remainingForwardContext--;
+                        }
+                        AddFormattedOutputLine(ref output, line);
+                    }
                 }
 
-                output += '\t';
-                switch (line.Type)
-                {
-                    case ChangeType.Inserted:
-                        output += "+ ";
-                        break;
-                    case ChangeType.Deleted:
-                        output += "- ";
-                        break;
-                    default:
-                        output += "  ";
-                        break;
-                }
-                output += line.Text;
-                output += System.Environment.NewLine;
             }
             WriteObject(output);
         }
@@ -69,6 +88,42 @@ namespace SwitchConfigHelper
         protected override void EndProcessing()
         {
 
+        }
+
+        private void AddFormattedOutputLine(ref string output, DiffPiece line)
+        {
+            if (line.Position.HasValue)
+            {
+                output += line.Position.Value;
+            }
+
+            output += '\t';
+            switch (line.Type)
+            {
+                case ChangeType.Inserted:
+                    output += "+ ";
+                    break;
+                case ChangeType.Deleted:
+                    output += "- ";
+                    break;
+                default:
+                    output += "  ";
+                    break;
+            }
+            output += line.Text;
+            output += System.Environment.NewLine;
+        }
+    }
+}
+
+class ValidateContextParameter : ValidateArgumentsAttribute
+{
+    protected override void Validate(object arguments, EngineIntrinsics engineIntrinsics)
+    {
+        var context = (int)arguments;
+        if (context < 0)
+        {
+            throw new ArgumentOutOfRangeException();
         }
     }
 }
