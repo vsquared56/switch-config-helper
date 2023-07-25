@@ -45,36 +45,65 @@ namespace SwitchConfigHelper
             var diffBuilder = new SemanticInlineDiffBuilder(new Differ());
             var diff = diffBuilder.BuildDiffModel(referenceText, differenceText);
 
-            int remainingForwardContext = 0;
+            string currentSection = null;
+            int currentSectionStart = 0;
+            bool currentSectionContextPrinted = false;
+            int lastForwardContext = 0;
             string output = "";
 
             for (int i = 0; i < diff.Lines.Count; i++)
             {
                 var line = diff.Lines[i];
 
+                if (line.Text == "!")
+                {
+                    currentSection = null;
+                    currentSectionStart = i;
+                    currentSectionContextPrinted = false;
+                }
+                else if (currentSection == null)
+                {
+                    currentSection = line.Text;
+                    currentSectionStart = i;
+                    currentSectionContextPrinted = false;
+                }
+
+                //Print all lines
                 if (Context == 0)
                 {
                     AddFormattedOutputLine(ref output, line);
                 }
+                //print only changed lines with context
                 else
                 {
-                    if (remainingForwardContext == 0 && (line.Type == ChangeType.Inserted || line.Type == ChangeType.Deleted))
+                    //new change, and we're not printing forward context from an earlier change
+                    if (lastForwardContext < i && (line.Type == ChangeType.Inserted || line.Type == ChangeType.Deleted))
                     {
-                        for (var j = Math.Max(0, i - Context); j <= i; j++)
+                        //print section information
+                        if (currentSectionContextPrinted == false && currentSection != null && (i - currentSectionStart) > Context)
+                        {
+                            AddFormattedOutputLine(ref output, diff.Lines[currentSectionStart]);
+                            if ((i - currentSectionStart) > Context + 1)
+                            {
+                                output += "\t  ..." + System.Environment.NewLine;
+                            }
+                            currentSectionContextPrinted = true;
+                        }
+
+                        //print previous context, but only as far back as the already-printed forward context or the start of the document
+                        for (var j = Math.Max(0, Math.Max(i - Context, lastForwardContext + 1)); j <= i; j++)
                         {
                             AddFormattedOutputLine(ref output, diff.Lines[j]);
                         }
-                        remainingForwardContext = Context;
+                        lastForwardContext = i + Context;
                     }
-                    else if (remainingForwardContext > 0)
+                    //finish printing forward context from an earlier change
+                    else if (lastForwardContext >= i)
                     {
+                        //additional changes need more context
                         if (line.Type == ChangeType.Inserted || line.Type == ChangeType.Deleted)
                         {
-                            remainingForwardContext = Context;
-                        }
-                        else
-                        {
-                            remainingForwardContext--;
+                            lastForwardContext = i + Context;
                         }
                         AddFormattedOutputLine(ref output, line);
                     }
