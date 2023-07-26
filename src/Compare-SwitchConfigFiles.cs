@@ -30,8 +30,35 @@ namespace SwitchConfigHelper
             Position = 2,
             ValueFromPipeline = false,
             ValueFromPipelineByPropertyName = false)]
+        [Parameter(ParameterSetName = "Context")]
         [ValidateContextParameter()]
         public int Context { get; set; } = 0;
+
+        [Parameter(
+            Mandatory = false,
+            Position = 3,
+            ValueFromPipeline = false,
+            ValueFromPipelineByPropertyName = false)]
+        [Parameter(ParameterSetName = "Context")]
+        public SwitchParameter NoSectionHeaders
+        {
+            get { return noSectionHeaders; }
+            set { noSectionHeaders = value; }
+        }
+        private bool noSectionHeaders;
+
+        [Parameter(
+            Mandatory = false,
+            Position = 4,
+            ValueFromPipeline = false,
+            ValueFromPipelineByPropertyName = false)]
+        [Parameter(ParameterSetName = "Full")]
+        public SwitchParameter Full
+        {
+            get { return printFullDiff; }
+            set { printFullDiff = value; }
+        }
+        private bool printFullDiff;
 
         protected override void BeginProcessing()
         {
@@ -69,7 +96,7 @@ namespace SwitchConfigHelper
                 }
 
                 //Print all lines
-                if (Context == 0)
+                if (printFullDiff)
                 {
                     AddFormattedOutputLine(ref output, line);
                 }
@@ -80,7 +107,7 @@ namespace SwitchConfigHelper
                     if (lastForwardContext < i && (line.Type == ChangeType.Inserted || line.Type == ChangeType.Deleted))
                     {
                         //print section information
-                        if (currentSectionContextPrinted == false && currentSection != null && (i - currentSectionStart) > Context)
+                        if (!noSectionHeaders && !currentSectionContextPrinted && currentSection != null && (i - currentSectionStart) > Context)
                         {
                             AddFormattedOutputLine(ref output, diff.Lines[currentSectionStart]);
                             if ((i - currentSectionStart) > Context + 1)
