@@ -4,6 +4,7 @@ using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using System.IO;
 using System;
+using System.Text;
 
 namespace SwitchConfigHelper
 {
@@ -76,7 +77,7 @@ namespace SwitchConfigHelper
             int currentSectionStart = 0;
             bool currentSectionContextPrinted = false;
             int lastForwardContext = 0;
-            string output = "";
+            System.Text.StringBuilder result = new System.Text.StringBuilder(Math.Max(referenceText.Length,differenceText.Length));
 
             for (int i = 0; i < diff.Lines.Count; i++)
             {
@@ -98,7 +99,7 @@ namespace SwitchConfigHelper
                 //Print all lines
                 if (printFullDiff)
                 {
-                    AddFormattedOutputLine(ref output, line);
+                    AddFormattedOutputLine(ref result, line);
                 }
                 //print only changed lines with context
                 else
@@ -109,10 +110,10 @@ namespace SwitchConfigHelper
                         //print section information
                         if (!noSectionHeaders && !currentSectionContextPrinted && currentSection != null && (i - currentSectionStart) > Context)
                         {
-                            AddFormattedOutputLine(ref output, diff.Lines[currentSectionStart]);
+                            AddFormattedOutputLine(ref result, diff.Lines[currentSectionStart]);
                             if ((i - currentSectionStart) > Context + 1)
                             {
-                                output += "\t  ..." + System.Environment.NewLine;
+                                result.AppendLine("\t  ...");
                             }
                             currentSectionContextPrinted = true;
                         }
@@ -120,7 +121,7 @@ namespace SwitchConfigHelper
                         //print previous context, but only as far back as the already-printed forward context or the start of the document
                         for (var j = Math.Max(0, Math.Max(i - Context, lastForwardContext + 1)); j <= i; j++)
                         {
-                            AddFormattedOutputLine(ref output, diff.Lines[j]);
+                            AddFormattedOutputLine(ref result, diff.Lines[j]);
                         }
                         lastForwardContext = i + Context;
                     }
@@ -132,12 +133,12 @@ namespace SwitchConfigHelper
                         {
                             lastForwardContext = i + Context;
                         }
-                        AddFormattedOutputLine(ref output, line);
+                        AddFormattedOutputLine(ref result, line);
                     }
                 }
 
             }
-            WriteObject(output);
+            WriteObject(result.ToString());
         }
 
         // This method will be called once at the end of pipeline execution; if no input is received, this method is not called
@@ -146,28 +147,28 @@ namespace SwitchConfigHelper
 
         }
 
-        private void AddFormattedOutputLine(ref string output, DiffPiece line)
+        private void AddFormattedOutputLine(ref StringBuilder result, DiffPiece line)
         {
             if (line.Position.HasValue)
             {
-                output += line.Position.Value;
+                result.Append(line.Position.Value);
             }
 
-            output += '\t';
+            result.Append('\t');
             switch (line.Type)
             {
                 case ChangeType.Inserted:
-                    output += "+ ";
+                    result.Append("+ ");
                     break;
                 case ChangeType.Deleted:
-                    output += "- ";
+                    result.Append("- ");
                     break;
                 default:
-                    output += "  ";
+                    result.Append("  ");
                     break;
             }
-            output += line.Text;
-            output += System.Environment.NewLine;
+            result.Append(line.Text);
+            result.Append(System.Environment.NewLine);
         }
     }
 }
