@@ -79,11 +79,11 @@ namespace SwitchConfigHelper
 
             if (printFullDiff)
             {
-                WriteObject(DiffFormatter.FormatDiff(diff));
+                WriteObject(DiffFormatter.FormatDiff(diff, true));
             }
             else
             {
-                WriteObject(DiffFormatter.FormatDiff(diff, Context, NoSectionHeaders));
+                WriteObject(DiffFormatter.FormatDiff(diff, true, Context, NoSectionHeaders));
             }
             
         }
