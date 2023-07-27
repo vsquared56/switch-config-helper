@@ -22,7 +22,7 @@ namespace SwitchConfigHelper
             string currentSection = null;
             int currentSectionStart = 0;
             bool currentSectionContextPrinted = false;
-            int lastForwardContext = 0;
+            int lastForwardContext = -1;
             System.Text.StringBuilder result = new System.Text.StringBuilder();
 
             for (int i = 0; i < model.Lines.Count; i++)
@@ -54,7 +54,7 @@ namespace SwitchConfigHelper
                     if (lastForwardContext < i && (line.Type == ChangeType.Inserted || line.Type == ChangeType.Deleted))
                     {
                         //print section information
-                        if (!printSectionHeaders && !currentSectionContextPrinted && currentSection != null && (i - currentSectionStart) > context)
+                        if (printSectionHeaders && !currentSectionContextPrinted && currentSection != null && (i - currentSectionStart) > context)
                         {
                             AddFormattedOutputLine(ref result, model.Lines[currentSectionStart], includeLineNumbers);
                             if ((i - currentSectionStart) > context + 1)
