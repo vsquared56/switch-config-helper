@@ -9,15 +9,15 @@ namespace SwitchConfigHelper
     {
         public static string FormatDiff(DiffPaneModel model, bool includeLineNumbers)
         {
-            return FormatDiff(model, includeLineNumbers, true, 0, false);
+            return FormatDiff(model, includeLineNumbers, true, 0, false, "");
         }
 
-        public static string FormatDiff(DiffPaneModel model, bool includeLineNumbers, int context, bool printSectionHeaders)
+        public static string FormatDiff(DiffPaneModel model, bool includeLineNumbers, int context, bool printSectionHeaders, string trimmedLinesReplacement)
         {
-            return FormatDiff(model, includeLineNumbers, false, context, printSectionHeaders);
+            return FormatDiff(model, includeLineNumbers, false, context, printSectionHeaders, trimmedLinesReplacement);
         }
 
-        public static string FormatDiff(DiffPaneModel model, bool includeLineNumbers, bool fullOutput, int context, bool printSectionHeaders)
+        public static string FormatDiff(DiffPaneModel model, bool includeLineNumbers, bool fullOutput, int context, bool printSectionHeaders, string trimmedLinesReplacement)
         {
             string currentSection = null;
             int currentSectionStart = 0;
@@ -57,9 +57,9 @@ namespace SwitchConfigHelper
                         if (printSectionHeaders && !currentSectionContextPrinted && currentSection != null && (i - currentSectionStart) > context)
                         {
                             AddFormattedOutputLine(ref result, model.Lines[currentSectionStart], includeLineNumbers);
-                            if ((i - currentSectionStart) > context + 1)
+                            if (trimmedLinesReplacement.Length > 0 && (i - currentSectionStart) > context + 1)
                             {
-                                result.AppendLine("\t  ...");
+                                result.AppendLine($"\t  {trimmedLinesReplacement}");
                             }
                             currentSectionContextPrinted = true;
                         }
