@@ -82,7 +82,7 @@ namespace SwitchConfigHelper.Tests
 - statement 2.2
 ";
 
-                var diffOutput = DiffFormatter.FormatDiff(model, false, 0, true);
+                var diffOutput = DiffFormatter.FormatDiff(model, false, 0, true, "");
                 Assert.Equal(expectedOutput, diffOutput);
             }
         }
