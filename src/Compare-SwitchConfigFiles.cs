@@ -8,7 +8,7 @@ using System.Text;
 
 namespace SwitchConfigHelper
 {
-    [Cmdlet(VerbsData.Compare, "SwitchConfigFiles")]
+    [Cmdlet(VerbsData.Compare, "SwitchConfigFiles", DefaultParameterSetName = "Context")]
     [OutputType(typeof(string))]
     public class CompareSwitchConfigFilesCmdlet : Cmdlet
     {
@@ -17,6 +17,8 @@ namespace SwitchConfigHelper
             Position = 0,
             ValueFromPipeline = false,
             ValueFromPipelineByPropertyName = false)]
+        [Parameter(ParameterSetName = "Context")]
+        [Parameter(ParameterSetName = "Full")]
         public string ReferencePath { get; set; }
 
         [Parameter(
@@ -24,6 +26,8 @@ namespace SwitchConfigHelper
             Position = 1,
             ValueFromPipeline = false,
             ValueFromPipelineByPropertyName = false)]
+        [Parameter(ParameterSetName = "Context")]
+        [Parameter(ParameterSetName = "Full")]
         public string DifferencePath { get; set; }
 
         [Parameter(
@@ -33,7 +37,7 @@ namespace SwitchConfigHelper
             ValueFromPipelineByPropertyName = false)]
         [Parameter(ParameterSetName = "Context")]
         [ValidateContextParameter()]
-        public int Context { get; set; } = 0;
+        public int Context { get; set; } = 3;
 
         [Parameter(
             Mandatory = false,
