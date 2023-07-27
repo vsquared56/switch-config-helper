@@ -83,7 +83,7 @@ namespace SwitchConfigHelper
             }
             else
             {
-                WriteObject(DiffFormatter.FormatDiff(diff, true, Context, NoSectionHeaders));
+                WriteObject(DiffFormatter.FormatDiff(diff, true, Context, !NoSectionHeaders));
             }
             
         }
