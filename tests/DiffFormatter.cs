@@ -118,6 +118,22 @@ namespace SwitchConfigHelper.Tests
                 var diffOutput = DiffFormatter.FormatDiff(model, false, 1, true, "...");
                 Assert.Equal(expectedOutput, diffOutput);
             }
+
+            [Fact]
+            public void NoChangesPrintsNothing()
+            {
+                var model = new DiffPaneModel();
+                model.Lines.Add(new DiffPiece("section 1", ChangeType.Unchanged, 1));
+                model.Lines.Add(new DiffPiece("statement 1.1", ChangeType.Unchanged, 2));
+                model.Lines.Add(new DiffPiece("statement 1.2", ChangeType.Unchanged, 3));
+                model.Lines.Add(new DiffPiece("statement 1.3", ChangeType.Unchanged, 4));
+                model.Lines.Add(new DiffPiece("!", ChangeType.Unchanged, 5));
+
+                string expectedOutput = "";
+
+                var diffOutput = DiffFormatter.FormatDiff(model, false, 1, true, "...");
+                Assert.Equal(expectedOutput, diffOutput);
+            }
         }
     }
 }

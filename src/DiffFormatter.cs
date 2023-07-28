@@ -99,7 +99,7 @@ namespace SwitchConfigHelper
             }
 
             //show trimmed lines between the last change and the EOF
-            if (trimmedLinesReplacement.Length > 0 && lastPrintedLine < model.Lines.Count - 1)
+            if (trimmedLinesReplacement.Length > 0 && model.HasDifferences && lastPrintedLine < model.Lines.Count - 1)
             {
                 AddFormattedOutputLine(ref result, trimmedLinesReplacement, ChangeType.Unchanged, 0, includeLineNumbers);
             }
