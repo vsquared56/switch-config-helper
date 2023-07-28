@@ -16,7 +16,7 @@ namespace SwitchConfigHelper
             return FormatDiff(model, includeLineNumbers, false, context, printSectionHeaders, trimmedLinesReplacement);
         }
 
-        public static string FormatDiff(DiffPaneModel model, bool includeLineNumbers, bool fullOutput, int context, bool printSectionHeaders, string trimmedLinesReplacement)
+        public static string FormatDiff(DiffPaneModel model, bool includeLineNumbers, bool fullOutput, int context, bool printSectionHeaders, string trimmedLineMarker)
         {
             string currentSection = null;
             int currentSectionStart = 0;
@@ -58,9 +58,9 @@ namespace SwitchConfigHelper
                         if (printSectionHeaders && !currentSectionContextPrinted && currentSection != null && (i - currentSectionStart) > context)
                         {
                             //show trimmed lines before the current section header in the output, e.g. with "..."
-                            if (trimmedLinesReplacement.Length > 0 && lastPrintedLine < currentSectionStart)
+                            if (trimmedLineMarker.Length > 0 && lastPrintedLine < currentSectionStart)
                             {
-                                AddFormattedOutputLine(ref result, trimmedLinesReplacement, ChangeType.Unchanged, 0, includeLineNumbers);
+                                AddFormattedOutputLine(ref result, trimmedLineMarker, ChangeType.Unchanged, 0, includeLineNumbers);
                             }
 
                             //print the section header
@@ -70,9 +70,9 @@ namespace SwitchConfigHelper
                         }
 
                         //show trimmed lines before the actual change, or the previous context of this change
-                        if (trimmedLinesReplacement.Length > 0 && lastPrintedLine < Math.Max(i - context, lastForwardContext + 1) - 1)
+                        if (trimmedLineMarker.Length > 0 && lastPrintedLine < Math.Max(i - context, lastForwardContext + 1) - 1)
                         {
-                            AddFormattedOutputLine(ref result, trimmedLinesReplacement, ChangeType.Unchanged, 0, includeLineNumbers);
+                            AddFormattedOutputLine(ref result, trimmedLineMarker, ChangeType.Unchanged, 0, includeLineNumbers);
                         }
 
                         //print previous context, but only as far back as the already-printed forward context or the start of the document
@@ -99,9 +99,9 @@ namespace SwitchConfigHelper
             }
 
             //show trimmed lines between the last change and the EOF
-            if (trimmedLinesReplacement.Length > 0 && model.HasDifferences && lastPrintedLine < model.Lines.Count - 1)
+            if (trimmedLineMarker.Length > 0 && model.HasDifferences && lastPrintedLine < model.Lines.Count - 1)
             {
-                AddFormattedOutputLine(ref result, trimmedLinesReplacement, ChangeType.Unchanged, 0, includeLineNumbers);
+                AddFormattedOutputLine(ref result, trimmedLineMarker, ChangeType.Unchanged, 0, includeLineNumbers);
             }
 
             return result.ToString();

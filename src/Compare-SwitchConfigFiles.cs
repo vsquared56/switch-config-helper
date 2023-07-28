@@ -57,6 +57,19 @@ namespace SwitchConfigHelper
             Position = 4,
             ValueFromPipeline = false,
             ValueFromPipelineByPropertyName = false)]
+        [Parameter(ParameterSetName = "Context")]
+        public SwitchParameter ShowTrimmedLines
+        {
+            get { return showTrimmedLines; }
+            set { showTrimmedLines = value; }
+        }
+        private bool showTrimmedLines;
+
+        [Parameter(
+            Mandatory = false,
+            Position = 5,
+            ValueFromPipeline = false,
+            ValueFromPipelineByPropertyName = false)]
         [Parameter(ParameterSetName = "Full")]
         public SwitchParameter Full
         {
@@ -83,7 +96,8 @@ namespace SwitchConfigHelper
             }
             else
             {
-                WriteObject(DiffFormatter.FormatDiff(diff, true, Context, !NoSectionHeaders, "..."));
+                var trimmedLineMarker = showTrimmedLines ? "..." : "";
+                WriteObject(DiffFormatter.FormatDiff(diff, true, Context, !NoSectionHeaders, trimmedLineMarker));
             }
             
         }
