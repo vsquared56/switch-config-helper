@@ -54,7 +54,8 @@ PowerShellVersion = '5.1'
 # RequiredModules = @()
 
 # Assemblies that must be loaded prior to importing this module
-RequiredAssemblies = 'Scriban.dll','Microsoft.CSharp.dll',
+RequiredAssemblies = 'DiffPlex.dll','Scriban.dll',
+    'Microsoft.CSharp.dll',
     'System.Runtime.CompilerServices.Unsafe.dll', 
     'System.Threading.Tasks.Extensions.dll'
 

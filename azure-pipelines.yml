@@ -78,10 +78,12 @@ stages:
           }
 
     - task: PowerShell@2
-      displayName: Test PowerShell cmdlet
+      displayName: Test PowerShell cmdlets
       inputs:
         targetType: 'inline'
         script: |
           Import-Module .\build\SwitchConfigHelper\publish\SwitchConfigHelper.psd1
       
           ConvertFrom-TemplateFile -TemplatePath .\tests\test_template.txt
+
+          Compare-SwitchConfigFiles -ReferencePath .\tests\test_template.txt -DifferencePath .\tests\test_template.txt
