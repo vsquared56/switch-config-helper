@@ -1,5 +1,4 @@
 using System;
-using DiffPlex;
 using System.Text;
 using DiffPlex.DiffBuilder.Model;
 
@@ -22,14 +21,15 @@ namespace SwitchConfigHelper
             string currentSection = null;
             int currentSectionStart = 0;
             bool currentSectionContextPrinted = false;
+            int lastPrintedLine = 0;
             int lastForwardContext = -1;
             System.Text.StringBuilder result = new System.Text.StringBuilder();
 
             for (int i = 0; i < model.Lines.Count; i++)
             {
-                var line = model.Lines[i];
+                var currentLine = model.Lines[i];
 
-                if (line.Text == "!")
+                if (currentLine.Text == "!")
                 {
                     currentSection = null;
                     currentSectionStart = i;
@@ -37,7 +37,7 @@ namespace SwitchConfigHelper
                 }
                 else if (currentSection == null)
                 {
-                    currentSection = line.Text;
+                    currentSection = currentLine.Text;
                     currentSectionStart = i;
                     currentSectionContextPrinted = false;
                 }
@@ -45,29 +45,41 @@ namespace SwitchConfigHelper
                 //Print all lines
                 if (fullOutput)
                 {
-                    AddFormattedOutputLine(ref result, line, includeLineNumbers);
+                    AddFormattedOutputLine(ref result, currentLine, includeLineNumbers);
                 }
                 //print only changed lines with context
                 else
                 {
                     //new change, and we're not printing forward context from an earlier change
-                    if (lastForwardContext < i && (line.Type == ChangeType.Inserted || line.Type == ChangeType.Deleted))
+                    if (lastForwardContext < i && (currentLine.Type == ChangeType.Inserted || currentLine.Type == ChangeType.Deleted))
                     {
                         //print section information
+                        //note that section headers that fit into the previous context won't be printed as a section header, but as context
                         if (printSectionHeaders && !currentSectionContextPrinted && currentSection != null && (i - currentSectionStart) > context)
                         {
-                            AddFormattedOutputLine(ref result, model.Lines[currentSectionStart], includeLineNumbers);
-                            if (trimmedLinesReplacement.Length > 0 && (i - currentSectionStart) > context + 1)
+                            //show trimmed lines before the current section header in the output, e.g. with "..."
+                            if (trimmedLinesReplacement.Length > 0 && lastPrintedLine < currentSectionStart)
                             {
-                                result.AppendLine($"\t  {trimmedLinesReplacement}");
+                                AddFormattedOutputLine(ref result, trimmedLinesReplacement, ChangeType.Unchanged, 0, includeLineNumbers);
                             }
+
+                            //print the section header
+                            AddFormattedOutputLine(ref result, model.Lines[currentSectionStart], includeLineNumbers);
+                            lastPrintedLine = currentSectionStart;
                             currentSectionContextPrinted = true;
+                        }
+
+                        //show trimmed lines before the actual change, or the previous context of this change
+                        if (trimmedLinesReplacement.Length > 0 && lastPrintedLine < Math.Max(i - context, lastForwardContext + 1) - 1)
+                        {
+                            AddFormattedOutputLine(ref result, trimmedLinesReplacement, ChangeType.Unchanged, 0, includeLineNumbers);
                         }
 
                         //print previous context, but only as far back as the already-printed forward context or the start of the document
                         for (var j = Math.Max(0, Math.Max(i - context, lastForwardContext + 1)); j <= i; j++)
                         {
                             AddFormattedOutputLine(ref result, model.Lines[j], includeLineNumbers);
+                            lastPrintedLine = j;
                         }
                         lastForwardContext = i + context;
                     }
@@ -76,30 +88,49 @@ namespace SwitchConfigHelper
                     else if (lastForwardContext >= i)
                     {
                         //additional changes need more context
-                        if (line.Type == ChangeType.Inserted || line.Type == ChangeType.Deleted)
+                        if (currentLine.Type == ChangeType.Inserted || currentLine.Type == ChangeType.Deleted)
                         {
                             lastForwardContext = i + context;
                         }
-                        AddFormattedOutputLine(ref result, line, includeLineNumbers);
+                        AddFormattedOutputLine(ref result, currentLine, includeLineNumbers);
+                        lastPrintedLine = i;
                     }
                 }
             }
+
+            //show trimmed lines between the last change and the EOF
+            if (trimmedLinesReplacement.Length > 0 && lastPrintedLine < model.Lines.Count - 1)
+            {
+                AddFormattedOutputLine(ref result, trimmedLinesReplacement, ChangeType.Unchanged, 0, includeLineNumbers);
+            }
+
             return result.ToString();
         }
 
         private static void AddFormattedOutputLine(ref StringBuilder result, DiffPiece line, bool includeLineNumbers)
         {
+            var position = 0;
+            if (line.Position.HasValue)
+            {
+                position = line.Position.Value;
+            }
+
+            AddFormattedOutputLine(ref result, line.Text, line.Type, position, includeLineNumbers);
+        }
+
+        private static void AddFormattedOutputLine(ref StringBuilder result, string line, ChangeType changeType, int position, bool includeLineNumbers)
+        {
             if (includeLineNumbers)
             {
-                if (line.Position.HasValue)
+                if (position > 0)
                 {
-                    result.Append(line.Position.Value);
+                    result.Append(position);
                 }
 
                 result.Append('\t');
             }
 
-            switch (line.Type)
+            switch (changeType)
             {
                 case ChangeType.Inserted:
                     result.Append("+ ");
@@ -111,7 +142,7 @@ namespace SwitchConfigHelper
                     result.Append("  ");
                     break;
             }
-            result.Append(line.Text);
+            result.Append(line);
             result.Append(System.Environment.NewLine);
         }
     }
