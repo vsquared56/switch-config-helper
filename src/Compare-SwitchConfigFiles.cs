@@ -90,16 +90,25 @@ namespace SwitchConfigHelper
             var diffBuilder = new SemanticInlineDiffBuilder(new Differ());
             var diff = diffBuilder.BuildDiffModel(referenceText, differenceText);
 
+            string result;
             if (printFullDiff)
             {
-                WriteObject(DiffFormatter.FormatDiff(diff, true));
+                result = DiffFormatter.FormatDiff(diff, true);
             }
             else
             {
                 var trimmedLineMarker = showTrimmedLines ? "..." : "";
-                WriteObject(DiffFormatter.FormatDiff(diff, true, Context, !NoSectionHeaders, trimmedLineMarker));
+                result = DiffFormatter.FormatDiff(diff, true, Context, !NoSectionHeaders, trimmedLineMarker);
             }
             
+            if (result.Length == 0)
+            {
+                return;
+            }
+            else
+            {
+                WriteObject(result);
+            }
         }
 
         // This method will be called once at the end of pipeline execution; if no input is received, this method is not called
