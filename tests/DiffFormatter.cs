@@ -1,7 +1,5 @@
 using Xunit;
-using DiffPlex;
 using DiffPlex.DiffBuilder.Model;
-using SwitchConfigHelper;
 
 namespace SwitchConfigHelper.Tests
 {

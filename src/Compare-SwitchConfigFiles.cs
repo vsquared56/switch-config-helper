@@ -1,10 +1,7 @@
 ﻿using System.Management.Automation;
 using DiffPlex;
-using DiffPlex.DiffBuilder;
-using DiffPlex.DiffBuilder.Model;
 using System.IO;
 using System;
-using System.Text;
 
 namespace SwitchConfigHelper
 {
@@ -111,7 +108,6 @@ namespace SwitchConfigHelper
             }
         }
 
-        // This method will be called once at the end of pipeline execution; if no input is received, this method is not called
         protected override void EndProcessing()
         {
 
