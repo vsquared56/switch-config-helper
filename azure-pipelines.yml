@@ -99,6 +99,7 @@ stages:
   jobs:
   - job: Deploy
     steps:
+    - checkout: none
     - task: CopyFiles@2
       displayName: Clear Deployment Directory
       inputs:
