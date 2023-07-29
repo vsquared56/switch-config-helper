@@ -9,12 +9,16 @@ namespace SwitchConfigHelper
     [OutputType(typeof(string))]
     public class ConvertFromTemplateFileCommand : Cmdlet
     {
+        private string templatePath;
         [Parameter(
             Mandatory = true,
             Position = 0,
             ValueFromPipeline = true,
             ValueFromPipelineByPropertyName = true)]
-        public string TemplatePath { get; set; }
+        public string TemplatePath { 
+            get { return TemplatePath; }
+            set { templatePath = PathProcessor.ProcessPath(value); }
+        }
 
         protected override void BeginProcessing()
         {
@@ -24,7 +28,7 @@ namespace SwitchConfigHelper
         protected override void ProcessRecord()
         {
             var processor = new TemplateProcessor();
-            var template = processor.Parse(File.ReadAllText(TemplatePath), TemplatePath);
+            var template = processor.Parse(File.ReadAllText(templatePath), templatePath);
             var result = processor.Render(template);
             WriteObject(result);
         }
