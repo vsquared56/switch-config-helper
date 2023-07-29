@@ -7,7 +7,7 @@ namespace SwitchConfigHelper
 {
     [Cmdlet(VerbsData.ConvertFrom, "TemplateFile")]
     [OutputType(typeof(string))]
-    public class ConvertFromTemplateFileCommand : Cmdlet
+    public class ConvertFromTemplateFileCommand : PSCmdlet
     {
         private string templatePath;
         [Parameter(
