@@ -1,14 +1,15 @@
 ﻿using System.Management.Automation;
 using DiffPlex;
-using System.IO;
 using System;
+using System.IO;
 
 namespace SwitchConfigHelper
 {
     [Cmdlet(VerbsData.Compare, "SwitchConfigFiles", DefaultParameterSetName = "Context")]
     [OutputType(typeof(string))]
-    public class CompareSwitchConfigFilesCmdlet : Cmdlet
+    public class CompareSwitchConfigFilesCmdlet : PSCmdlet
     {
+        private string referencePath;
         [Parameter(
             Mandatory = true,
             Position = 0,
@@ -16,8 +17,12 @@ namespace SwitchConfigHelper
             ValueFromPipelineByPropertyName = false)]
         [Parameter(ParameterSetName = "Context")]
         [Parameter(ParameterSetName = "Full")]
-        public string ReferencePath { get; set; }
+        public string ReferencePath { 
+            get { return ReferencePath; }
+            set { referencePath = PathProcessor.ProcessPath(value); }
+        }
 
+        private string differencePath;
         [Parameter(
             Mandatory = true,
             Position = 1,
@@ -25,7 +30,10 @@ namespace SwitchConfigHelper
             ValueFromPipelineByPropertyName = false)]
         [Parameter(ParameterSetName = "Context")]
         [Parameter(ParameterSetName = "Full")]
-        public string DifferencePath { get; set; }
+        public string DifferencePath { 
+            get { return DifferencePath; }
+            set { differencePath = PathProcessor.ProcessPath(value); }
+         }
 
         [Parameter(
             Mandatory = false,
@@ -82,8 +90,8 @@ namespace SwitchConfigHelper
 
         protected override void ProcessRecord()
         {
-            var referenceText = File.ReadAllText(ReferencePath);
-            var differenceText = File.ReadAllText(DifferencePath);
+            var referenceText = File.ReadAllText(referencePath);
+            var differenceText = File.ReadAllText(differencePath);
             var diffBuilder = new SemanticInlineDiffBuilder(new Differ());
             var diff = diffBuilder.BuildDiffModel(referenceText, differenceText);
 
@@ -97,7 +105,7 @@ namespace SwitchConfigHelper
                 var trimmedLineMarker = showTrimmedLines ? "..." : "";
                 result = DiffFormatter.FormatDiff(diff, true, Context, !NoSectionHeaders, trimmedLineMarker);
             }
-            
+
             if (result.Length == 0)
             {
                 return;
