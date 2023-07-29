@@ -102,7 +102,7 @@ stages:
     - task: CopyFiles@2
       displayName: Clear Deployment Directory
       inputs:
-        SourceFolder: $(deploymentPath)
+        SourceFolder: .\build\SwitchConfigHelper\publish\
         Contents: '**'
         TargetFolder: $(deploymentPath)
         CleanTargetFolder: true
