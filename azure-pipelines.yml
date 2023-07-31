@@ -93,9 +93,9 @@ stages:
 
 - stage: Deploy
   dependsOn: Publish
+  #condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
   jobs:
   - job: Deploy
-    #condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
     steps:
     - checkout: none
     - task: CopyFiles@2
