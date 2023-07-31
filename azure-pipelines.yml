@@ -99,7 +99,7 @@ stages:
     steps:
     - checkout: none
     - task: CopyFiles@2
-      displayName: Clear Deployment Directory
+      displayName: Deploy Module
       inputs:
         SourceFolder: .\build\SwitchConfigHelper\publish\
         Contents: '**'
