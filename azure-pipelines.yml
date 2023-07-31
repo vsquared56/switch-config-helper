@@ -93,9 +93,6 @@ stages:
 
 - stage: Deploy
   dependsOn: Publish
-  variables:
-    - name: deploymentPath
-      value: '\\ad.rvtn.org\metastorm\mgt\ps_modules\switch_config_helper\'
   jobs:
   - job: Deploy
     condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
