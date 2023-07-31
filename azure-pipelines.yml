@@ -93,7 +93,7 @@ stages:
 
 - stage: Deploy
   dependsOn: Publish
-  #condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+  condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
   jobs:
   - job: Deploy
     steps:
