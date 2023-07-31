@@ -6,6 +6,7 @@
 trigger:
 - main
 - feature/*
+- pipeline/*
 
 pool:
   name: default
@@ -28,6 +29,7 @@ stages:
         projects: '**/*.sln'
 
 - stage: Test
+  dependsOn: Build
   jobs:
   - job: Test
     steps:
@@ -44,6 +46,7 @@ stages:
         projects: '**/*.sln'
 
 - stage: Publish
+  dependsOn: Test
   jobs:
   - job: Publish
     steps:
@@ -87,3 +90,21 @@ stages:
           ConvertFrom-TemplateFile -TemplatePath .\tests\test_template.txt
 
           Compare-SwitchConfigFiles -ReferencePath .\tests\test_template.txt -DifferencePath .\tests\test_template.txt
+
+- stage: Deploy
+  dependsOn: Publish
+  condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+  jobs:
+  - job: Deploy
+    steps:
+    - checkout: none
+    - task: CopyFiles@2
+      displayName: Deploy Module
+      inputs:
+        SourceFolder: .\build\SwitchConfigHelper\publish\
+        Contents: '**'
+        TargetFolder: $(deploymentPath)
+        CleanTargetFolder: true
+        OverWrite: true
+        retryCount: '3'
+        delayBetweenRetries: '5000'
