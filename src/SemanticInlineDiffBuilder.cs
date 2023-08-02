@@ -63,12 +63,12 @@ namespace SwitchConfigHelper
                     var currentLine = model.Lines[i];
                     if (currentLine.Text == "!" && (currentLine.Type == ChangeType.Unchanged || currentLine.Type == ChangeType.Inserted))
                     {
-                        currentSectionStart = -1;
                         semanticModel.Lines.Add(new SemanticDiffPiece(
                             currentLine.Text,
                             currentLine.Type,
                             currentLine.Position,
-                            null));
+                            currentSectionStart == -1 ? i : currentSectionStart));
+                        currentSectionStart = -1;
                     }
                     else if (currentSectionStart == -1 && currentLine.Position != null && (currentLine.Type == ChangeType.Unchanged || currentLine.Type == ChangeType.Inserted))
                     {
