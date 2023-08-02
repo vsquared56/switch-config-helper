@@ -6,6 +6,7 @@
 trigger:
 - main
 - feature/*
+- fix/*
 - pipeline/*
 
 pool:

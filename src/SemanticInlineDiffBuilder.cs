@@ -38,7 +38,7 @@ namespace SwitchConfigHelper
                 //and if the text to the left is identical to the last-changed line
                 return (changeStart + shiftAmount >= 0
                         && model.Lines[changeStart + shiftAmount].Type == ChangeType.Unchanged
-                        && model.Lines[changeStart + shiftAmount].Text == model.Lines[changeEnd + shiftAmount].Text);
+                        && model.Lines[changeStart + shiftAmount].Text == model.Lines[changeEnd + shiftAmount + 1].Text);
             }
             else if (shiftAmount > 0)
             {
