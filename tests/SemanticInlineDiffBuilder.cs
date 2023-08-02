@@ -33,12 +33,22 @@ ip access-list extended acl_vlan2
                 var diffBuilder = new SemanticInlineDiffBuilder(new Differ());
                 var diff = diffBuilder.BuildDiffModel(referenceText, differenceText);
 
-                Assert.Equal(8, diff.Lines.Count);
-                Assert.Equal(ChangeType.Unchanged, diff.Lines[3].Type);
-                Assert.Equal(ChangeType.Inserted, diff.Lines[4].Type);
-                Assert.Equal(ChangeType.Inserted, diff.Lines[5].Type);
-                Assert.Equal(ChangeType.Inserted, diff.Lines[6].Type);
-                Assert.Equal(ChangeType.Inserted, diff.Lines[7].Type);
+                diff.Should().BeOfType<SemanticDiffPaneModel>();
+                diff.Lines.Should().AllBeOfType<SemanticDiffPiece>();
+                diff.Lines.Should().HaveCount(8);
+                diff.Lines.Where(x => x.Type != ChangeType.Deleted).Should().OnlyHaveUniqueItems(x => x.Position);
+                diff.Lines.Where(x => x.Type != ChangeType.Deleted).Should().BeInAscendingOrder(x => x.Position);
+
+                diff.Lines.Should().SatisfyRespectively(
+                    line00 => { line00.Type.Should().Be(ChangeType.Unchanged); },
+                    line01 => { line01.Type.Should().Be(ChangeType.Unchanged); },
+                    line02 => { line02.Type.Should().Be(ChangeType.Unchanged); },
+                    line03 => { line03.Type.Should().Be(ChangeType.Unchanged); },
+                    line04 => { line04.Type.Should().Be(ChangeType.Inserted); },
+                    line05 => { line05.Type.Should().Be(ChangeType.Inserted); },
+                    line06 => { line06.Type.Should().Be(ChangeType.Inserted); },
+                    line07 => { line07.Type.Should().Be(ChangeType.Inserted); }
+                    );
             }
         }
 
@@ -66,12 +76,23 @@ ip access-list extended acl_vlan2
             var diffBuilder = new SemanticInlineDiffBuilder(new Differ());
             var diff = diffBuilder.BuildDiffModel(referenceText, differenceText);
 
-            Assert.Equal(9, diff.Lines.Count);
-            Assert.Equal(ChangeType.Unchanged, diff.Lines[4].Type); //First ! unchanged
-            Assert.Equal(ChangeType.Inserted, diff.Lines[5].Type);
-            Assert.Equal(ChangeType.Inserted, diff.Lines[6].Type);
-            Assert.Equal(ChangeType.Inserted, diff.Lines[7].Type);
-            Assert.Equal(ChangeType.Inserted, diff.Lines[8].Type); //Final ! inserted
+            diff.Should().BeOfType<SemanticDiffPaneModel>();
+            diff.Lines.Should().AllBeOfType<SemanticDiffPiece>();
+            diff.Lines.Should().HaveCount(9);
+            diff.Lines.Where(x => x.Type != ChangeType.Deleted).Should().OnlyHaveUniqueItems(x => x.Position);
+            diff.Lines.Where(x => x.Type != ChangeType.Deleted).Should().BeInAscendingOrder(x => x.Position);
+
+            diff.Lines.Should().SatisfyRespectively(
+                    line00 => { line00.Type.Should().Be(ChangeType.Unchanged); },
+                    line01 => { line01.Type.Should().Be(ChangeType.Deleted); },
+                    line02 => { line02.Type.Should().Be(ChangeType.Inserted); },
+                    line03 => { line03.Type.Should().Be(ChangeType.Unchanged); },
+                    line04 => { line04.Type.Should().Be(ChangeType.Unchanged); },
+                    line05 => { line05.Type.Should().Be(ChangeType.Inserted); },
+                    line06 => { line06.Type.Should().Be(ChangeType.Inserted); },
+                    line07 => { line07.Type.Should().Be(ChangeType.Inserted); },
+                    line08 => { line08.Type.Should().Be(ChangeType.Inserted); }
+                    );
         }
     }
 }
