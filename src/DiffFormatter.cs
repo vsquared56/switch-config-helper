@@ -6,17 +6,17 @@ namespace SwitchConfigHelper
 {
     public static class DiffFormatter
     {
-        public static string FormatDiff(DiffPaneModel model, bool includeLineNumbers)
+        public static string FormatDiff(SemanticDiffPaneModel model, bool includeLineNumbers)
         {
             return FormatDiff(model, includeLineNumbers, true, 0, false, "");
         }
 
-        public static string FormatDiff(DiffPaneModel model, bool includeLineNumbers, int context, bool printSectionHeaders, string trimmedLinesReplacement)
+        public static string FormatDiff(SemanticDiffPaneModel model, bool includeLineNumbers, int context, bool printSectionHeaders, string trimmedLinesReplacement)
         {
             return FormatDiff(model, includeLineNumbers, false, context, printSectionHeaders, trimmedLinesReplacement);
         }
 
-        public static string FormatDiff(DiffPaneModel model, bool includeLineNumbers, bool fullOutput, int context, bool printSectionHeaders, string trimmedLineMarker)
+        public static string FormatDiff(SemanticDiffPaneModel model, bool includeLineNumbers, bool fullOutput, int context, bool printSectionHeaders, string trimmedLineMarker)
         {
             string currentSection = null;
             int currentSectionStart = 0;
