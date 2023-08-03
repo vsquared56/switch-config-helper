@@ -17,45 +17,48 @@ namespace SwitchConfigHelper
         public new SemanticDiffPaneModel BuildDiffModel(string oldText, string newText)
             => BuildDiffModel(oldText, newText, ignoreWhitespace: true);
 
+        public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText)
+            => BuildEffectiveDiffModel(oldText, newText, ignoreWhitespace: true);
+
         public new SemanticDiffPaneModel BuildDiffModel(string oldText, string newText, bool ignoreWhitespace)
         {
             var chunker = new LineChunker();
             return BuildDiffModel(oldText, newText, ignoreWhitespace, false, chunker);
         }
 
-        //This isn't intended to analyze an arbitrary shift.
-        //Instead, start at 0 and call with increasing/decreasing shift amounts until an invalid shift
-        private bool isValidShift(SemanticDiffPaneModel model, int changeStart, int changeEnd, int shiftAmount)
+        public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText, bool ignoreWhitespace)
         {
-            if (shiftAmount == 0)
-            {
-                return true;
-            }
-            else if (shiftAmount < 0)
-            {
-                //shifts left are valid if they are still within the document
-                //if we're shifting left into still-unchanged lines
-                //and if the text to the left is identical to the last-changed line
-                return (changeStart + shiftAmount >= 0
-                        && model.Lines[changeStart + shiftAmount].Type == ChangeType.Unchanged
-                        && model.Lines[changeStart + shiftAmount].Text == model.Lines[changeEnd + shiftAmount + 1].Text);
-            }
-            else if (shiftAmount > 0)
-            {
-                return (changeEnd + shiftAmount < model.Lines.Count
-                        && model.Lines[changeEnd + shiftAmount].Type == ChangeType.Unchanged
-                        && model.Lines[changeStart + shiftAmount - 1].Text == model.Lines[changeEnd + shiftAmount].Text);
-            }
-            return false;
+            var chunker = new LineChunker();
+            return BuildEffectiveDiffModel(oldText, newText, ignoreWhitespace, false, chunker);
+        }
+        
+        public new SemanticDiffPaneModel BuildDiffModel(string oldText, string newText, bool ignoreWhitespace, bool ignoreCase, IChunker chunker)
+        {
+            var model = new SemanticDiffPaneModel(base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker));
+            return PerformSemanticShifts(model);
+        }
+
+        public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText, bool ignoreWhitespace, bool ignoreCase, IChunker chunker)
+        {
+            var model = new SemanticDiffPaneModel(base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker));
+            return PerformSemanticShifts(FindEffectiveAclChanges(model));
+        }
+
+        public SemanticDiffPaneModel FindEffectiveAclChanges(SemanticDiffPaneModel model)
+        {
+            return model;
         }
 
         //Take the base diff model, and analyze if blocks of changes can be shifted left or right
         //for better semantic alignment.  See 3.2.2 in https://neil.fraser.name/writing/diff/ for inspiration
-        public new SemanticDiffPaneModel BuildDiffModel(string oldText, string newText, bool ignoreWhitespace, bool ignoreCase, IChunker chunker)
+        public SemanticDiffPaneModel PerformSemanticShifts(SemanticDiffPaneModel model)
         {
-            DiffPaneModel model = base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker);
             SemanticDiffPaneModel semanticModel = new SemanticDiffPaneModel();
-            if (model.HasDifferences)
+            if (!model.HasDifferences)
+            {
+                return model;
+            }
+            else
             {
                 int currentSectionStart = -1;
                 for (int i = 0; i < model.Lines.Count; i++)
@@ -157,8 +160,34 @@ namespace SwitchConfigHelper
                         }
                     }
                 }
+                return semanticModel;
             }
-            return semanticModel;
+        }
+
+        //This isn't intended to analyze an arbitrary shift.
+        //Instead, start at 0 and call with increasing/decreasing shift amounts until an invalid shift
+        private bool isValidShift(SemanticDiffPaneModel model, int changeStart, int changeEnd, int shiftAmount)
+        {
+            if (shiftAmount == 0)
+            {
+                return true;
+            }
+            else if (shiftAmount < 0)
+            {
+                //shifts left are valid if they are still within the document
+                //if we're shifting left into still-unchanged lines
+                //and if the text to the left is identical to the last-changed line
+                return (changeStart + shiftAmount >= 0
+                        && model.Lines[changeStart + shiftAmount].Type == ChangeType.Unchanged
+                        && model.Lines[changeStart + shiftAmount].Text == model.Lines[changeEnd + shiftAmount + 1].Text);
+            }
+            else if (shiftAmount > 0)
+            {
+                return (changeEnd + shiftAmount < model.Lines.Count
+                        && model.Lines[changeEnd + shiftAmount].Type == ChangeType.Unchanged
+                        && model.Lines[changeStart + shiftAmount - 1].Text == model.Lines[changeEnd + shiftAmount].Text);
+            }
+            return false;
         }
     }
 }

@@ -22,5 +22,13 @@ namespace SwitchConfigHelper
             Type = type;
             SectionStartPosition = sectionPosition;
         }
+
+        public SemanticDiffPiece(DiffPiece piece)
+        {
+            Text = piece.Text;
+            Position = piece.Position;
+            Type = piece.Type;
+            SectionStartPosition = null;
+        }
     }
 }
