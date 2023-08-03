@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Linq;
 using DiffPlex.DiffBuilder.Model;
 
 namespace SwitchConfigHelper
@@ -29,16 +30,11 @@ namespace SwitchConfigHelper
             {
                 var currentLine = model.Lines[i];
 
-                if (currentLine.Text == "!")
+                //new section
+                if (i == 0 || currentLine.SectionStartPosition > model.Lines[i - 1].SectionStartPosition)
                 {
-                    currentSection = null;
-                    currentSectionStart = i;
-                    currentSectionContextPrinted = false;
-                }
-                else if (currentSection == null)
-                {
-                    currentSection = currentLine.Text;
-                    currentSectionStart = i;
+                    currentSectionStart = model.Lines.IndexOf(model.Lines.Where(x => x.Position == currentLine.SectionStartPosition).First());
+                    currentSection = model.Lines[currentSectionStart].Text;
                     currentSectionContextPrinted = false;
                 }
 
@@ -54,11 +50,12 @@ namespace SwitchConfigHelper
                     if (lastForwardContext < i && (currentLine.Type == ChangeType.Inserted || currentLine.Type == ChangeType.Deleted))
                     {
                         //print section information
-                        //note that section headers that fit into the previous context won't be printed as a section header, but as context
-                        if (printSectionHeaders && !currentSectionContextPrinted && currentSection != null && (i - currentSectionStart) > context)
+                        //note that section headers that are also included in previous context
+                        //are printed as section headers, not as previous context
+                        if (printSectionHeaders && !currentSectionContextPrinted)
                         {
                             //show trimmed lines before the current section header in the output, e.g. with "..."
-                            if (trimmedLineMarker.Length > 0 && lastPrintedLine < currentSectionStart)
+                            if (trimmedLineMarker.Length > 0 && lastPrintedLine < currentSectionStart - 1)
                             {
                                 AddFormattedOutputLine(ref result, trimmedLineMarker, ChangeType.Unchanged, 0, includeLineNumbers);
                             }
@@ -75,13 +72,26 @@ namespace SwitchConfigHelper
                             AddFormattedOutputLine(ref result, trimmedLineMarker, ChangeType.Unchanged, 0, includeLineNumbers);
                         }
 
-                        //print previous context, but only as far back as the already-printed forward context or the start of the document
-                        for (var j = Math.Max(0, Math.Max(i - context, lastForwardContext + 1)); j <= i; j++)
+                        //print previous context and the current line,
+                        //but only as far back as the start of the document,
+                        //the already-printed forward context,
+                        //or the line after the last printed (in case a section header was printed earlier)
+                        if (context > 0)
                         {
-                            AddFormattedOutputLine(ref result, model.Lines[j], includeLineNumbers);
-                            lastPrintedLine = j;
+                            int contextStart = new[] { 0, i - context, lastForwardContext + 1, lastPrintedLine + 1}.Max();
+                            for (var j = contextStart; j <= i; j++)
+                            {
+                                AddFormattedOutputLine(ref result, model.Lines[j], includeLineNumbers);
+                                lastPrintedLine = j;
+                            }
+                            lastForwardContext = i + context;
                         }
-                        lastForwardContext = i + context;
+                        //if no context is to be printed, print the current line
+                        else
+                        {
+                            AddFormattedOutputLine(ref result, model.Lines[i], includeLineNumbers);
+                            lastPrintedLine = i;
+                        }
                     }
 
                     //finish printing forward context from an earlier change
