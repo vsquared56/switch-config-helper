@@ -233,7 +233,7 @@ namespace SwitchConfigHelper
 
         private bool isAclSection(string text)
         {
-            return text.Contains("ip access-list");
+            return text.Trim().StartsWith("ip access-list");
         }
     }
 }
