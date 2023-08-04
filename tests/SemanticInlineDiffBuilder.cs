@@ -247,6 +247,7 @@ ip access-list extended acl_vlan2
                 string referenceText = @"ip access-list extended acl_vlan1
   remark Allow DNS lookups
   permit udp 172.20.1.0/24 host 8.8.8.8 eq dns
+!
 ip access-list extended acl_vlan2
   remark Allow DNS lookups from primary DNS
   permit udp 172.20.2.0/24 host 8.8.8.8 eq dns
@@ -261,6 +262,7 @@ ip access-list extended acl_vlan3
                 string differenceText = @"ip access-list extended acl_vlan1
   remark Allow DNS lookups
   permit udp 172.20.1.0/24 host 8.8.8.8 eq dns
+!
 ip access-list extended acl_vlan2
   remark Allow DNS lookups from secondary DNS
   permit udp 172.20.2.0/24 host 8.8.4.4 eq dns
@@ -277,7 +279,7 @@ ip access-list extended acl_vlan3
 
                 diff.Should().BeOfType<SemanticDiffPaneModel>();
                 diff.Lines.Should().AllBeOfType<SemanticDiffPiece>();
-                diff.Lines.Should().HaveCount(13);
+                diff.Lines.Should().HaveCount(14);
                 diff.Lines.Where(x => x.Type != ChangeType.Deleted).Should().OnlyHaveUniqueItems(x => x.Position);
                 diff.Lines.Where(x => x.Type != ChangeType.Deleted).Should().BeInAscendingOrder(x => x.Position);
                 diff.Lines.Should().BeInAscendingOrder(x => x.SectionStartPosition);
@@ -336,14 +338,14 @@ ip access-list extended acl_vlan3
                     {
                         line.Position.Should().Be(8);
                         line.Text.Should().Be("  remark Allow DNS lookups from primary DNS");
-                        line.Type.Should().Be(ChangeType.Modified);
+                        line.Type.Should().Be(ChangeType.Unchanged);
                         line.SectionStartPosition.Should().Be(5);
                     },
                     line =>
                     {
                         line.Position.Should().Be(9);
                         line.Text.Should().Be("  permit udp 172.20.2.0/24 host 8.8.8.8 eq dns");
-                        line.Type.Should().Be(ChangeType.Modified);
+                        line.Type.Should().Be(ChangeType.Unchanged);
                         line.SectionStartPosition.Should().Be(5);
                     },
                     line =>
@@ -371,6 +373,13 @@ ip access-list extended acl_vlan3
                     {
                         line.Position.Should().Be(13);
                         line.Text.Should().Be("  permit udp 172.20.3.0/24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                        line.SectionStartPosition.Should().Be(11);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(14);
+                        line.Text.Should().Be("!");
                         line.Type.Should().Be(ChangeType.Unchanged);
                         line.SectionStartPosition.Should().Be(11);
                     }

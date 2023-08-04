@@ -5,6 +5,7 @@ using DiffPlex.DiffBuilder.Model;
 using System.Collections.Generic;
 using DiffPlex.Chunkers;
 using System.Linq;
+using System.Collections;
 
 namespace SwitchConfigHelper
 {
@@ -46,7 +47,80 @@ namespace SwitchConfigHelper
 
         public SemanticDiffPaneModel FindEffectiveAclChanges(SemanticDiffPaneModel model)
         {
-            return model;
+            if (!model.HasDifferences)
+            {
+                return model;
+            }
+            else
+            {
+                var currentSectionRemovals = new List<AclEntry>();
+                var currentSectionAdditions = new List<AclEntry>();
+                var previousSectionStart = -1;
+                for (var i = 0; i < model.Lines.Count; i++)
+                {
+                    var currentLine = model.Lines[i];
+                    var previousLine = i == 0 ? null : model.Lines[i - 1];
+                    var currentSectionStart = model.Lines.IndexOf(model.Lines.Where(x => x.Position == currentLine.SectionStartPosition).First());
+                    var currentSection = model.Lines[currentSectionStart];
+
+                    if (currentSectionStart != previousSectionStart)
+                    {
+                        foreach (AclEntry acl in currentSectionRemovals)
+                        {
+                            if (currentSectionAdditions.Contains(acl))
+                            {
+                                model.Lines.Remove(acl.Acl);
+                                if (acl.Remark != null)
+                                {
+                                    model.Lines.Remove(acl.Remark);
+                                }
+                                var additionAcl = currentSectionAdditions.Find(a => a.Equals(acl));
+                                model.Lines[(model.Lines.IndexOf(additionAcl.Acl))].Type = ChangeType.Modified;
+                                if (additionAcl.Remark != null)
+                                {
+                                    model.Lines[(model.Lines.IndexOf(additionAcl.Remark))].Type = ChangeType.Modified;
+                                }
+                            }
+                        }
+
+                        currentSectionRemovals.Clear();
+                        currentSectionAdditions.Clear();
+                    }
+                    else
+                    {
+                        if (currentLine.Type == ChangeType.Inserted && isAclSection(currentSection.Text))
+                        {
+                            if (currentLine.Text.Trim().StartsWith("permit"))
+                            {
+                                if (previousLine != null && previousLine.Text.Trim().StartsWith("remark"))
+                                {
+                                    currentSectionAdditions.Add(new AclEntry(currentLine, previousLine));
+                                }
+                                else
+                                {
+                                    currentSectionAdditions.Add(new AclEntry(currentLine));
+                                }
+                            }
+                        }
+                        else if (currentLine.Type == ChangeType.Deleted)
+                        {
+                            if (currentLine.Text.Trim().StartsWith("permit"))
+                            {
+                                if (previousLine != null && previousLine.Text.Trim().StartsWith("remark"))
+                                {
+                                    currentSectionRemovals.Add(new AclEntry(currentLine, previousLine));
+                                }
+                                else
+                                {
+                                    currentSectionRemovals.Add(new AclEntry(currentLine));
+                                }
+                            }
+                        }
+                    }
+                    previousSectionStart = currentSectionStart;
+                }
+                return model;
+            }
         }
 
         //Take the base diff model, and analyze if blocks of changes can be shifted left or right
@@ -155,6 +229,11 @@ namespace SwitchConfigHelper
                         && model.Lines[changeStart + shiftAmount - 1].Text == model.Lines[changeEnd + shiftAmount].Text);
             }
             return false;
+        }
+
+        private bool isAclSection(string text)
+        {
+            return text.Contains("ip access-list");
         }
     }
 }
