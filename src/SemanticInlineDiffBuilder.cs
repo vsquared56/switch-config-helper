@@ -45,6 +45,13 @@ namespace SwitchConfigHelper
             return PerformSemanticShifts(FindEffectiveAclChanges(model));
         }
 
+        private enum AclType
+        {
+            None,
+            Permit,
+            Deny
+        }
+
         public SemanticDiffPaneModel FindEffectiveAclChanges(SemanticDiffPaneModel model)
         {
             if (!model.HasDifferences)
@@ -64,14 +71,27 @@ namespace SwitchConfigHelper
                 var currentSectionRemovals = new List<EffectiveAclEntry>();
                 var currentSectionAdditions = new List<EffectiveAclEntry>();
                 var previousSectionStart = -1;
+                var previousAclType = AclType.None;
+
                 for (var i = 0; i < model.Lines.Count; i++)
                 {
                     var currentLine = model.Lines[i];
                     var previousLine = i == 0 ? null : model.Lines[i - 1];
                     var currentSectionStart = model.Lines.IndexOf(model.Lines.Where(x => x.Position == currentLine.SectionStartPosition).First());
                     var currentSection = model.Lines[currentSectionStart];
+                    var currentLineAclType = AclType.None;
+                    if (currentLine.Text.Trim().StartsWith("permit"))
+                    {
+                        currentLineAclType = AclType.Permit;
+                    }
+                    else if (currentLine.Text.Trim().StartsWith("deny"))
+                    {
+                        currentLineAclType = AclType.Deny;
+                    }
 
-                    if (currentSectionStart != previousSectionStart || i == model.Lines.Count - 1)
+                    if (currentSectionStart != previousSectionStart
+                        || i == model.Lines.Count - 1
+                        || (currentLineAclType != AclType.None && currentLineAclType != previousAclType))
                     {
                         foreach (var acl in currentSectionRemovals)
                         {
@@ -88,22 +108,20 @@ namespace SwitchConfigHelper
                     }
                     else
                     {
-                        if (currentLine.Type == ChangeType.Inserted && isAclSection(currentSection.Text))
+                        if (currentLine.Type == ChangeType.Inserted && isAclSection(currentSection.Text) && currentLineAclType != AclType.None)
                         {
-                            if (currentLine.Text.Trim().StartsWith("permit"))
-                            {
-                                currentSectionAdditions.Add(new EffectiveAclEntry(currentLine));
-                            }
+                            currentSectionAdditions.Add(new EffectiveAclEntry(currentLine));
                         }
-                        else if (currentLine.Type == ChangeType.Deleted)
+                        else if (currentLine.Type == ChangeType.Deleted && isAclSection(currentSection.Text) && currentLineAclType != AclType.None)
                         {
-                            if (currentLine.Text.Trim().StartsWith("permit"))
-                            {
-                                currentSectionRemovals.Add(new EffectiveAclEntry(currentLine));
-                            }
+                            currentSectionRemovals.Add(new EffectiveAclEntry(currentLine));
                         }
                     }
                     previousSectionStart = currentSectionStart;
+                    if (currentLineAclType != AclType.None)
+                    {
+                        previousAclType = currentLineAclType;
+                    }    
                 }
                 return model;
             }
