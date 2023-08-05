@@ -71,7 +71,7 @@ namespace SwitchConfigHelper
                     var currentSectionStart = model.Lines.IndexOf(model.Lines.Where(x => x.Position == currentLine.SectionStartPosition).First());
                     var currentSection = model.Lines[currentSectionStart];
 
-                    if (currentSectionStart != previousSectionStart)
+                    if (currentSectionStart != previousSectionStart || i == model.Lines.Count - 1)
                     {
                         foreach (var acl in currentSectionRemovals)
                         {
