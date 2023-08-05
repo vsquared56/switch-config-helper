@@ -53,8 +53,16 @@ namespace SwitchConfigHelper
             }
             else
             {
-                var currentSectionRemovals = new List<AclEntry>();
-                var currentSectionAdditions = new List<AclEntry>();
+                //Ignore remark lines that have been deleted
+                model.Lines.RemoveAll(x => x.Text.Trim().StartsWith("remark") && x.Type == ChangeType.Deleted);
+                //Remark lines that have been inserted should only be considered changed
+                foreach (var line in model.Lines.Where(x => x.Text.Trim().StartsWith("remark") && x.Type == ChangeType.Inserted))
+                {
+                    line.Type = ChangeType.Modified;
+                }
+
+                var currentSectionRemovals = new List<EffectiveAclEntry>();
+                var currentSectionAdditions = new List<EffectiveAclEntry>();
                 var previousSectionStart = -1;
                 for (var i = 0; i < model.Lines.Count; i++)
                 {
@@ -65,21 +73,13 @@ namespace SwitchConfigHelper
 
                     if (currentSectionStart != previousSectionStart)
                     {
-                        foreach (AclEntry acl in currentSectionRemovals)
+                        foreach (var acl in currentSectionRemovals)
                         {
                             if (currentSectionAdditions.Contains(acl))
                             {
-                                model.Lines.Remove(acl.Acl);
-                                if (acl.Remark != null)
-                                {
-                                    model.Lines.Remove(acl.Remark);
-                                }
+                                model.Lines.Remove(acl.Piece);
                                 var additionAcl = currentSectionAdditions.Find(a => a.Equals(acl));
-                                model.Lines[(model.Lines.IndexOf(additionAcl.Acl))].Type = ChangeType.Modified;
-                                if (additionAcl.Remark != null)
-                                {
-                                    model.Lines[(model.Lines.IndexOf(additionAcl.Remark))].Type = ChangeType.Modified;
-                                }
+                                model.Lines[(model.Lines.IndexOf(additionAcl.Piece))].Type = ChangeType.Modified;
                             }
                         }
 
@@ -92,28 +92,14 @@ namespace SwitchConfigHelper
                         {
                             if (currentLine.Text.Trim().StartsWith("permit"))
                             {
-                                if (previousLine != null && previousLine.Text.Trim().StartsWith("remark"))
-                                {
-                                    currentSectionAdditions.Add(new AclEntry(currentLine, previousLine));
-                                }
-                                else
-                                {
-                                    currentSectionAdditions.Add(new AclEntry(currentLine));
-                                }
+                                currentSectionAdditions.Add(new EffectiveAclEntry(currentLine));
                             }
                         }
                         else if (currentLine.Type == ChangeType.Deleted)
                         {
                             if (currentLine.Text.Trim().StartsWith("permit"))
                             {
-                                if (previousLine != null && previousLine.Text.Trim().StartsWith("remark"))
-                                {
-                                    currentSectionRemovals.Add(new AclEntry(currentLine, previousLine));
-                                }
-                                else
-                                {
-                                    currentSectionRemovals.Add(new AclEntry(currentLine));
-                                }
+                                currentSectionRemovals.Add(new EffectiveAclEntry(currentLine));
                             }
                         }
                     }
