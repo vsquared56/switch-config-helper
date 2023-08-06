@@ -148,6 +148,9 @@ namespace SwitchConfigHelper
                 case ChangeType.Deleted:
                     result.Append("- ");
                     break;
+                case ChangeType.Modified:
+                    result.Append("* ");
+                    break;
                 default:
                     result.Append("  ");
                     break;

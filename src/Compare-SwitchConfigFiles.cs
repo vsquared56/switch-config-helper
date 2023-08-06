@@ -83,6 +83,20 @@ namespace SwitchConfigHelper
         }
         private bool printFullDiff;
 
+        [Parameter(
+            Mandatory = false,
+            Position = 6,
+            ValueFromPipeline = false,
+            ValueFromPipelineByPropertyName = false)]
+        [Parameter(ParameterSetName = "Full")]
+        [Parameter(ParameterSetName = "Context")]
+        public SwitchParameter EffectiveChangesOnly
+        {
+            get { return effectiveChangesOnly; }
+            set { effectiveChangesOnly = value; }
+        }
+        private bool effectiveChangesOnly;
+
         protected override void BeginProcessing()
         {
 
@@ -93,7 +107,15 @@ namespace SwitchConfigHelper
             var referenceText = File.ReadAllText(referencePath);
             var differenceText = File.ReadAllText(differencePath);
             var diffBuilder = new SemanticInlineDiffBuilder(new Differ());
-            var diff = diffBuilder.BuildDiffModel(referenceText, differenceText);
+            SemanticDiffPaneModel diff;
+            if (effectiveChangesOnly)
+            {
+                diff = diffBuilder.BuildEffectiveDiffModel(referenceText, differenceText);
+            }
+            else
+            {
+                diff = diffBuilder.BuildDiffModel(referenceText, differenceText);
+            }
 
             string result;
             if (printFullDiff)

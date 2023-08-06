@@ -31,7 +31,7 @@ namespace SwitchConfigHelper
                         currentLine.Text,
                         currentLine.Type,
                         currentLine.Position,
-                        currentSectionStart == -1 ? i : currentSectionStart));
+                        currentSectionStart == -1 ? currentLine.Position : currentSectionStart));
                     currentSectionStart = -1;
                 }
                 else if (currentSectionStart == -1 && currentLine.Position != null && (currentLine.Type == ChangeType.Unchanged || currentLine.Type == ChangeType.Inserted))
