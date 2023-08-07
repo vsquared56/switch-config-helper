@@ -5,7 +5,7 @@ using System.IO;
 
 namespace SwitchConfigHelper
 {
-    [Cmdlet(VerbsData.Compare, "SwitchConfigFiles", DefaultParameterSetName = "Context")]
+    [Cmdlet(VerbsData.Compare, "SwitchConfigFiles", DefaultParameterSetName = "ContextAllChanges")]
     [OutputType(typeof(string))]
     public class CompareSwitchConfigFilesCmdlet : PSCmdlet
     {
@@ -15,8 +15,10 @@ namespace SwitchConfigHelper
             Position = 0,
             ValueFromPipeline = false,
             ValueFromPipelineByPropertyName = false)]
-        [Parameter(ParameterSetName = "Context")]
-        [Parameter(ParameterSetName = "Full")]
+        [Parameter(ParameterSetName = "ContextAllChanges")]
+        [Parameter(ParameterSetName = "ContextEffectiveChanges")]
+        [Parameter(ParameterSetName = "FullAllChanges")]
+        [Parameter(ParameterSetName = "FullEffectiveChanges")]
         public string ReferencePath { 
             get { return ReferencePath; }
             set { referencePath = PathProcessor.ProcessPath(value); }
@@ -28,8 +30,10 @@ namespace SwitchConfigHelper
             Position = 1,
             ValueFromPipeline = false,
             ValueFromPipelineByPropertyName = false)]
-        [Parameter(ParameterSetName = "Context")]
-        [Parameter(ParameterSetName = "Full")]
+        [Parameter(ParameterSetName = "ContextAllChanges")]
+        [Parameter(ParameterSetName = "ContextEffectiveChanges")]
+        [Parameter(ParameterSetName = "FullAllChanges")]
+        [Parameter(ParameterSetName = "FullEffectiveChanges")]
         public string DifferencePath { 
             get { return DifferencePath; }
             set { differencePath = PathProcessor.ProcessPath(value); }
@@ -40,7 +44,8 @@ namespace SwitchConfigHelper
             Position = 2,
             ValueFromPipeline = false,
             ValueFromPipelineByPropertyName = false)]
-        [Parameter(ParameterSetName = "Context")]
+        [Parameter(ParameterSetName = "ContextAllChanges")]
+        [Parameter(ParameterSetName = "ContextEffectiveChanges")]
         [ValidateContextParameter()]
         public int Context { get; set; } = 3;
 
@@ -49,7 +54,8 @@ namespace SwitchConfigHelper
             Position = 3,
             ValueFromPipeline = false,
             ValueFromPipelineByPropertyName = false)]
-        [Parameter(ParameterSetName = "Context")]
+        [Parameter(ParameterSetName = "ContextAllChanges")]
+        [Parameter(ParameterSetName = "ContextEffectiveChanges")]
         public SwitchParameter NoSectionHeaders
         {
             get { return noSectionHeaders; }
@@ -62,7 +68,8 @@ namespace SwitchConfigHelper
             Position = 4,
             ValueFromPipeline = false,
             ValueFromPipelineByPropertyName = false)]
-        [Parameter(ParameterSetName = "Context")]
+        [Parameter(ParameterSetName = "ContextAllChanges")]
+        [Parameter(ParameterSetName = "ContextEffectiveChanges")]
         public SwitchParameter ShowTrimmedLines
         {
             get { return showTrimmedLines; }
@@ -75,7 +82,8 @@ namespace SwitchConfigHelper
             Position = 5,
             ValueFromPipeline = false,
             ValueFromPipelineByPropertyName = false)]
-        [Parameter(ParameterSetName = "Full")]
+        [Parameter(ParameterSetName = "FullAllChanges")]
+        [Parameter(ParameterSetName = "FullEffectiveChanges")]
         public SwitchParameter Full
         {
             get { return printFullDiff; }
@@ -88,14 +96,28 @@ namespace SwitchConfigHelper
             Position = 6,
             ValueFromPipeline = false,
             ValueFromPipelineByPropertyName = false)]
-        [Parameter(ParameterSetName = "Full")]
-        [Parameter(ParameterSetName = "Context")]
+        [Parameter(ParameterSetName = "ContextEffectiveChanges")]
+        [Parameter(ParameterSetName = "FullEffectiveChanges")]
         public SwitchParameter EffectiveChangesOnly
         {
             get { return effectiveChangesOnly; }
             set { effectiveChangesOnly = value; }
         }
         private bool effectiveChangesOnly;
+
+        [Parameter(
+            Mandatory = false,
+            Position = 7,
+            ValueFromPipeline = false,
+            ValueFromPipelineByPropertyName = false)]
+        [Parameter(ParameterSetName = "ContextEffectiveChanges")]
+        [Parameter(ParameterSetName = "FullEffectiveChanges")]
+        public SwitchParameter IgnoreEqualAcls
+        {
+            get { return ignoreEqualAcls; }
+            set { ignoreEqualAcls = value; }
+        }
+        private bool ignoreEqualAcls;
 
         protected override void BeginProcessing()
         {
@@ -120,12 +142,12 @@ namespace SwitchConfigHelper
             string result;
             if (printFullDiff)
             {
-                result = DiffFormatter.FormatDiff(diff, true);
+                result = DiffFormatter.FormatDiff(diff, true, ignoreEqualAcls);
             }
             else
             {
                 var trimmedLineMarker = showTrimmedLines ? "..." : "";
-                result = DiffFormatter.FormatDiff(diff, true, Context, !NoSectionHeaders, trimmedLineMarker);
+                result = DiffFormatter.FormatDiff(diff, true, Context, !NoSectionHeaders, trimmedLineMarker, ignoreEqualAcls);
             }
 
             if (result.Length == 0)
