@@ -1,5 +1,4 @@
 using System;
-using DiffPlex;
 using DiffPlex.DiffBuilder.Model;
 
 namespace SwitchConfigHelper

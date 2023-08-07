@@ -1,12 +1,7 @@
-using System.Net.Sockets;
-using Xunit;
-using FluentAssertions;
-using DiffPlex.DiffBuilder;
 using DiffPlex;
 using DiffPlex.DiffBuilder.Model;
-using System.Collections.Generic;
-using System.DirectoryServices;
-using System.Net;
+using Xunit;
+using FluentAssertions;
 
 namespace SwitchConfigHelper.Tests
 {

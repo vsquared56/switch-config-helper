@@ -5,7 +5,6 @@ using DiffPlex.DiffBuilder.Model;
 using System.Collections.Generic;
 using DiffPlex.Chunkers;
 using System.Linq;
-using System.Collections;
 
 namespace SwitchConfigHelper
 {
