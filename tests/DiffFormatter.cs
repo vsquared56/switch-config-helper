@@ -152,7 +152,7 @@ namespace SwitchConfigHelper.Tests
                 model.Lines.Add(new SemanticDiffPiece("!", ChangeType.Deleted, null, null));
 
                 string expectedOutput = @"- section 2
-- statement 2.2
+- statement 2.1
 - !
 ";
 
