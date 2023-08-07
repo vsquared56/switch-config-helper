@@ -38,7 +38,7 @@ namespace SwitchConfigHelper.Tests
                 semanticModel.Lines.Where(x => x.Position <= 4)
                     .Should().AllSatisfy(x => { x.SectionStartPosition.Should().Be(1); });
 
-                semanticModel.Lines.Should().BeInAscendingOrder(x => x.SectionStartPosition);
+                semanticModel.Lines.Where(x => x.Type != ChangeType.Deleted).Should().BeInAscendingOrder(x => x.SectionStartPosition);
             }
 
             [Fact]
@@ -66,7 +66,7 @@ namespace SwitchConfigHelper.Tests
                 semanticModel.Lines.Where(x => x.Position >= 5)
                     .Should().AllSatisfy(x => { x.SectionStartPosition.Should().Be(x.Position); });
 
-                semanticModel.Lines.Should().BeInAscendingOrder(x => x.SectionStartPosition);
+                semanticModel.Lines.Where(x => x.Type != ChangeType.Deleted).Should().BeInAscendingOrder(x => x.SectionStartPosition);
             }
 
             [Fact]
@@ -94,7 +94,7 @@ namespace SwitchConfigHelper.Tests
                 semanticModel.Lines.Where(x => x.Type == ChangeType.Deleted)
                     .Should().AllSatisfy(x => { x.SectionStartPosition.Should().BeNull(); });
 
-                semanticModel.Lines.Should().BeInAscendingOrder(x => x.SectionStartPosition);
+                semanticModel.Lines.Where(x => x.Type != ChangeType.Deleted).Should().BeInAscendingOrder(x => x.SectionStartPosition);
             }
         }
     }
