@@ -20,7 +20,7 @@ namespace SwitchConfigHelper
         public static string FormatDiff(SemanticDiffPaneModel model, bool includeLineNumbers, bool fullOutput, int context, bool printSectionHeaders, string trimmedLineMarker, bool modifiedLinesAreUnchanged)
         {
             string currentSection = null;
-            int currentSectionStart = 0;
+            int? currentSectionStart = null;
             bool currentSectionContextPrinted = false;
             int lastPrintedLine = 0;
             int lastForwardContext = -1;
@@ -30,14 +30,6 @@ namespace SwitchConfigHelper
             {
                 var currentLine = model.Lines[i];
 
-                //new section
-                if (i == 0 || currentLine.SectionStartPosition > model.Lines[i - 1].SectionStartPosition)
-                {
-                    currentSectionStart = model.Lines.IndexOf(model.Lines.Where(x => x.Position == currentLine.SectionStartPosition).First());
-                    currentSection = model.Lines[currentSectionStart].Text;
-                    currentSectionContextPrinted = false;
-                }
-
                 //Print all lines
                 if (fullOutput)
                 {
@@ -46,6 +38,21 @@ namespace SwitchConfigHelper
                 //print only changed lines with context
                 else
                 {
+                    //deleted setion
+                    if (currentLine.SectionStartPosition == null)
+                    {
+                        currentSectionStart = null;
+                        currentSection = null;
+                        currentSectionContextPrinted = false;
+                    }
+                    //new section
+                    else if (i == 0 || currentLine.SectionStartPosition > model.Lines[i - 1].SectionStartPosition)
+                    {
+                        currentSectionStart = model.Lines.IndexOf(model.Lines.Where(x => x.Position == currentLine.SectionStartPosition).First());
+                        currentSection = model.Lines[(int)currentSectionStart].Text;
+                        currentSectionContextPrinted = false;
+                    }
+
                     //new change, and we're not printing forward context from an earlier change
                     if (lastForwardContext < i
                         && ((!modifiedLinesAreUnchanged && currentLine.Type == ChangeType.Modified)
@@ -55,7 +62,7 @@ namespace SwitchConfigHelper
                         //print section information
                         //note that section headers that are also included in previous context
                         //are printed as section headers, not as previous context
-                        if (printSectionHeaders && !currentSectionContextPrinted)
+                        if (printSectionHeaders && !currentSectionContextPrinted && currentSectionStart != null)
                         {
                             //show trimmed lines before the current section header in the output, e.g. with "..."
                             if (trimmedLineMarker.Length > 0 && lastPrintedLine < currentSectionStart - 1)
@@ -64,8 +71,8 @@ namespace SwitchConfigHelper
                             }
 
                             //print the section header
-                            AddFormattedOutputLine(ref result, model.Lines[currentSectionStart], includeLineNumbers, modifiedLinesAreUnchanged);
-                            lastPrintedLine = currentSectionStart;
+                            AddFormattedOutputLine(ref result, model.Lines[(int)currentSectionStart], includeLineNumbers, modifiedLinesAreUnchanged);
+                            lastPrintedLine = (int)currentSectionStart;
                             currentSectionContextPrinted = true;
                         }
 
