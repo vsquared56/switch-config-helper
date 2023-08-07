@@ -68,6 +68,34 @@ namespace SwitchConfigHelper.Tests
 
                 semanticModel.Lines.Should().BeInAscendingOrder(x => x.SectionStartPosition);
             }
+
+            [Fact]
+            public void DeletedSection()
+            {
+                var originalModel = new DiffPaneModel();
+
+                originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan1", ChangeType.Unchanged, 1));
+                originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Unchanged, 2));
+                originalModel.Lines.Add(new DiffPiece("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns", ChangeType.Unchanged, 3));
+                originalModel.Lines.Add(new DiffPiece("!", ChangeType.Unchanged, 4));
+                originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan2", ChangeType.Deleted, null));
+                originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Deleted, null));
+                originalModel.Lines.Add(new DiffPiece("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns", ChangeType.Deleted, null));
+                originalModel.Lines.Add(new DiffPiece("!", ChangeType.Deleted, null));
+
+                var semanticModel = new SemanticDiffPaneModel(originalModel);
+
+                semanticModel.Should().BeOfType<SemanticDiffPaneModel>();
+                semanticModel.Lines.Should().AllBeOfType<SemanticDiffPiece>();
+                semanticModel.Lines.Should().HaveCount(originalModel.Lines.Count);
+
+                semanticModel.Lines.Where(x => x.Type == ChangeType.Unchanged)
+                    .Should().AllSatisfy(x => { x.SectionStartPosition.Should().Be(1); });
+                semanticModel.Lines.Where(x => x.Type == ChangeType.Deleted)
+                    .Should().AllSatisfy(x => { x.SectionStartPosition.Should().BeNull(); });
+
+                semanticModel.Lines.Should().BeInAscendingOrder(x => x.SectionStartPosition);
+            }
         }
     }
 }

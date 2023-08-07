@@ -141,6 +141,26 @@ namespace SwitchConfigHelper.Tests
             }
 
             [Fact]
+            public void ContextOutputDeletedSection()
+            {
+                var model = new SemanticDiffPaneModel();
+                model.Lines.Add(new SemanticDiffPiece("section 1", ChangeType.Unchanged, 1, 1));
+                model.Lines.Add(new SemanticDiffPiece("statement 1.1", ChangeType.Unchanged, 2, 1));
+                model.Lines.Add(new SemanticDiffPiece("!", ChangeType.Unchanged, 3, 1));
+                model.Lines.Add(new SemanticDiffPiece("section 2", ChangeType.Deleted, null, null));
+                model.Lines.Add(new SemanticDiffPiece("statement 2.1", ChangeType.Deleted, null, null));
+                model.Lines.Add(new SemanticDiffPiece("!", ChangeType.Deleted, null, null));
+
+                string expectedOutput = @"- section 2
+- statement 2.2
+- !
+";
+
+                var diffOutput = DiffFormatter.FormatDiff(model, false, 0, true, "", false);
+                Assert.Equal(expectedOutput, diffOutput);
+            }
+
+            [Fact]
             public void OnlyModificationsPrintsNothing()
             {
                 var model = new SemanticDiffPaneModel();
