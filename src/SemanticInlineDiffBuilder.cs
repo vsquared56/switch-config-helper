@@ -88,16 +88,24 @@ namespace SwitchConfigHelper
                         currentLineAclType = AclType.Deny;
                     }
 
+                    //Remove equivalent added/removed ACLs in a given section
+                    //Sections are delimited by the actual section header changing
+                    //or the end of the document
+                    //or ACL types changing from permit to deny, or vice-versa
                     if (currentSectionStart != previousSectionStart
                         || i == model.Lines.Count - 1
-                        || (currentLineAclType != AclType.None && currentLineAclType != previousAclType))
+                        || (currentLineAclType != AclType.None && previousAclType != AclType.None && currentLineAclType != previousAclType))
                     {
                         foreach (var acl in currentSectionRemovals)
                         {
+                            //If an equivalent ACL was both removed and inserted
                             if (currentSectionAdditions.Contains(acl))
                             {
+                                //Get rid of the removed ACL
                                 model.Lines.Remove(acl.Piece);
+                                i--; //Every line removed changes the index into model.Lines
                                 var additionAcl = currentSectionAdditions.Find(a => a.Equals(acl));
+                                //Consider the inserted ACL only a changed line
                                 model.Lines[(model.Lines.IndexOf(additionAcl.Piece))].Type = ChangeType.Modified;
                             }
                         }
@@ -105,18 +113,19 @@ namespace SwitchConfigHelper
                         currentSectionRemovals.Clear();
                         currentSectionAdditions.Clear();
                     }
-                    else
+
+                    //Add inserted or deleted ACLs for checking above
+                    if (currentLine.Type == ChangeType.Inserted && isAclSection(currentSection.Text) && currentLineAclType != AclType.None)
                     {
-                        if (currentLine.Type == ChangeType.Inserted && isAclSection(currentSection.Text) && currentLineAclType != AclType.None)
-                        {
-                            currentSectionAdditions.Add(new EffectiveAclEntry(currentLine));
-                        }
-                        else if (currentLine.Type == ChangeType.Deleted && isAclSection(currentSection.Text) && currentLineAclType != AclType.None)
-                        {
-                            currentSectionRemovals.Add(new EffectiveAclEntry(currentLine));
-                        }
+                        currentSectionAdditions.Add(new EffectiveAclEntry(currentLine));
                     }
+                    else if (currentLine.Type == ChangeType.Deleted && isAclSection(currentSection.Text) && currentLineAclType != AclType.None)
+                    {
+                        currentSectionRemovals.Add(new EffectiveAclEntry(currentLine));
+                    }
+
                     previousSectionStart = currentSectionStart;
+                    //Remarks or other entries that aren't permit/deny don't count as new sections
                     if (currentLineAclType != AclType.None)
                     {
                         previousAclType = currentLineAclType;

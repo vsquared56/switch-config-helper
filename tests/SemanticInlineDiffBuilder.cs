@@ -240,14 +240,14 @@ ip access-list extended acl_vlan2
             public void ReorderedAcls()
             {
                 string referenceText = @"ip access-list extended acl_vlan1
-  remark Allow DNS lookups
+  remark Allow DNS lookups from secondary DNS
+  permit udp 172.20.1.0/24 host 8.8.4.4 eq dns
+  remark Allow DNS lookups from primary DNS
   permit udp 172.20.1.0/24 host 8.8.8.8 eq dns
 !
 ip access-list extended acl_vlan2
-  remark Allow DNS lookups from primary DNS
-  permit udp 172.20.2.0/24 host 8.8.8.8 eq dns
-  remark Allow DNS lookups from secondary DNS
   permit udp 172.20.2.0/24 host 8.8.4.4 eq dns
+  permit udp 172.20.2.0/24 host 8.8.8.8 eq dns
 !
 ip access-list extended acl_vlan3
   remark Allow DNS lookups
@@ -255,14 +255,14 @@ ip access-list extended acl_vlan3
 !";
 
                 string differenceText = @"ip access-list extended acl_vlan1
-  remark Allow DNS lookups
+  remark Allow DNS lookups from primary DNS
   permit udp 172.20.1.0/24 host 8.8.8.8 eq dns
+  remark Allow DNS lookups from secondary DNS
+  permit udp 172.20.1.0/24 host 8.8.4.4 eq dns
 !
 ip access-list extended acl_vlan2
-  remark Allow DNS lookups from secondary DNS
-  permit udp 172.20.2.0/24 host 8.8.4.4 eq dns
-  remark Allow DNS lookups from primary DNS
   permit udp 172.20.2.0/24 host 8.8.8.8 eq dns
+  permit udp 172.20.2.0/24 host 8.8.4.4 eq dns
 !
 ip access-list extended acl_vlan3
   remark Allow DNS lookups
@@ -293,65 +293,67 @@ ip access-list extended acl_vlan3
                     line =>
                     {
                         line.Position.Should().Be(2);
-                        line.Text.Should().Be("  remark Allow DNS lookups");
-                        line.Type.Should().Be(ChangeType.Unchanged);
+                        line.Text.Should().Be("  remark Allow DNS lookups from primary DNS");
+                        line.Type.Should().Be(ChangeType.Modified);
                         line.SectionStartPosition.Should().Be(1);
                     },
                     line =>
                     {
                         line.Position.Should().Be(3);
                         line.Text.Should().Be("  permit udp 172.20.1.0/24 host 8.8.8.8 eq dns");
-                        line.Type.Should().Be(ChangeType.Unchanged);
+                        line.Type.Should().Be(ChangeType.Modified);
                         line.SectionStartPosition.Should().Be(1);
                     },
                     line =>
                     {
                         line.Position.Should().Be(4);
-                        line.Text.Should().Be("!");
+                        line.Text.Should().Be("  remark Allow DNS lookups from secondary DNS");
                         line.Type.Should().Be(ChangeType.Unchanged);
                         line.SectionStartPosition.Should().Be(1);
                     },
                     line =>
                     {
                         line.Position.Should().Be(5);
-                        line.Text.Should().Be("ip access-list extended acl_vlan2");
+                        line.Text.Should().Be("  permit udp 172.20.1.0/24 host 8.8.4.4 eq dns");
                         line.Type.Should().Be(ChangeType.Unchanged);
-                        line.SectionStartPosition.Should().Be(5);
+                        line.SectionStartPosition.Should().Be(1);
                     },
                     line =>
                     {
                         line.Position.Should().Be(6);
-                        line.Text.Should().Be("  remark Allow DNS lookups from secondary DNS");
-                        line.Type.Should().Be(ChangeType.Modified);
-                        line.SectionStartPosition.Should().Be(5);
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                        line.SectionStartPosition.Should().Be(1);
                     },
                     line =>
                     {
                         line.Position.Should().Be(7);
-                        line.Text.Should().Be("  permit udp 172.20.2.0/24 host 8.8.4.4 eq dns");
-                        line.Type.Should().Be(ChangeType.Modified);
-                        line.SectionStartPosition.Should().Be(5);
+                        line.Text.Should().Be("ip access-list extended acl_vlan2");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                        line.SectionStartPosition.Should().Be(7);
                     },
                     line =>
-                    {
+                    { // Test that the first line in a section is also considered
+                      // when evaluating effective ACL changes.
+                      // Other tests include remarks as the first line.
                         line.Position.Should().Be(8);
-                        line.Text.Should().Be("  remark Allow DNS lookups from primary DNS");
-                        line.Type.Should().Be(ChangeType.Unchanged);
-                        line.SectionStartPosition.Should().Be(5);
+                        line.Text.Should().Be("  permit udp 172.20.2.0/24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Modified);
+                        line.SectionStartPosition.Should().Be(7);
                     },
                     line =>
                     {
                         line.Position.Should().Be(9);
-                        line.Text.Should().Be("  permit udp 172.20.2.0/24 host 8.8.8.8 eq dns");
+                        line.Text.Should().Be("  permit udp 172.20.2.0/24 host 8.8.4.4 eq dns");
                         line.Type.Should().Be(ChangeType.Unchanged);
-                        line.SectionStartPosition.Should().Be(5);
+                        line.SectionStartPosition.Should().Be(7);
                     },
                     line =>
                     {
                         line.Position.Should().Be(10);
                         line.Text.Should().Be("!");
                         line.Type.Should().Be(ChangeType.Unchanged);
-                        line.SectionStartPosition.Should().Be(5);
+                        line.SectionStartPosition.Should().Be(7);
                     },
                     line =>
                     {
