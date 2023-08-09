@@ -1,13 +1,21 @@
 using System;
-using System.Management.Automation;
-using Scriban;
 using System.IO;
+using System.Threading.Tasks;
+using Scriban;
+using Scriban.Runtime;
+using Scriban.Parsing;
+
 
 namespace SwitchConfigHelper
 {
     public class TemplateProcessor
     {
         static TemplateContext context = new TemplateContext();
+
+        public TemplateProcessor()
+        {
+            context.TemplateLoader = new TemplateLoader();
+        }
 
         public Template Parse(string templateText)
         {
@@ -36,6 +44,24 @@ namespace SwitchConfigHelper
         {
             var result = template.Render(context);
             return result;
+        }
+    }
+
+    public class TemplateLoader : ITemplateLoader
+    {
+        public string GetPath(TemplateContext context, SourceSpan callerSpan, string templateName)
+        {
+            return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(callerSpan.FileName), templateName));
+        }
+
+        public string Load(TemplateContext context, SourceSpan callerSpan, string templatePath)
+        {
+            return File.ReadAllText(templatePath);
+        }
+
+        public ValueTask<string> LoadAsync(TemplateContext context, SourceSpan callerSpan, string templatePath)
+        {
+            throw new NotImplementedException();
         }
     }
 }
