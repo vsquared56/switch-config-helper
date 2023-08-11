@@ -42,6 +42,7 @@ namespace SwitchConfigHelper
 
         public string Render(Template template)
         {
+            context.CachedTemplates.Clear();
             var result = template.Render(context);
             return result;
         }
