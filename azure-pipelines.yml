@@ -92,7 +92,9 @@ stages:
 
           ConvertFrom-TemplateFile -TemplatePath .\tests\test_template_with_includes.txt
 
-          Compare-SwitchConfigFiles -ReferencePath .\tests\test_template.txt -DifferencePath .\tests\test_template.txt
+          Compare-SwitchConfigs -ReferencePath .\tests\test_template.txt -DifferencePath .\tests\test_template.txt
+
+          Compare-EffectiveSwitchConfigs -ReferencePath .\tests\test_template.txt -DifferencePath .\tests\test_template.txt
 
 - stage: Deploy
   dependsOn: Publish
