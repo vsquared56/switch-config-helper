@@ -94,7 +94,7 @@ stages:
 
           Compare-SwitchConfigs -ReferencePath .\tests\test_template.txt -DifferencePath .\tests\test_template.txt
 
-          Compare-EffectiveConfigs -ReferencePath .\tests\test_template.txt -DifferencePath .\tests\test_template.txt
+          Compare-EffectiveSwitchConfigs -ReferencePath .\tests\test_template.txt -DifferencePath .\tests\test_template.txt
 
 - stage: Deploy
   dependsOn: Publish
