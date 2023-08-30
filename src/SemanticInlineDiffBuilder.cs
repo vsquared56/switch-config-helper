@@ -5,6 +5,7 @@ using DiffPlex.DiffBuilder.Model;
 using System.Collections.Generic;
 using DiffPlex.Chunkers;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace SwitchConfigHelper
 {
@@ -17,8 +18,8 @@ namespace SwitchConfigHelper
         public new SemanticDiffPaneModel BuildDiffModel(string oldText, string newText)
             => BuildDiffModel(oldText, newText, ignoreWhitespace: true);
 
-        public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText)
-            => BuildEffectiveDiffModel(oldText, newText, ignoreWhitespace: true);
+        public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText, bool ignoreRemovedDuplicateAcls)
+            => BuildEffectiveDiffModel(oldText, newText, ignoreRemovedDuplicateAcls, ignoreWhitespace: true);
 
         public new SemanticDiffPaneModel BuildDiffModel(string oldText, string newText, bool ignoreWhitespace)
         {
@@ -26,10 +27,10 @@ namespace SwitchConfigHelper
             return BuildDiffModel(oldText, newText, ignoreWhitespace, false, chunker);
         }
 
-        public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText, bool ignoreWhitespace)
+        public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText, bool ignoreRemovedDuplicateAcls, bool ignoreWhitespace)
         {
             var chunker = new LineChunker();
-            return BuildEffectiveDiffModel(oldText, newText, ignoreWhitespace, false, chunker);
+            return BuildEffectiveDiffModel(oldText, newText, ignoreRemovedDuplicateAcls, ignoreWhitespace, false, chunker);
         }
         
         public new SemanticDiffPaneModel BuildDiffModel(string oldText, string newText, bool ignoreWhitespace, bool ignoreCase, IChunker chunker)
@@ -38,10 +39,10 @@ namespace SwitchConfigHelper
             return PerformSemanticShifts(model);
         }
 
-        public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText, bool ignoreWhitespace, bool ignoreCase, IChunker chunker)
+        public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText, bool ignoreRemovedDuplicateAcls, bool ignoreWhitespace, bool ignoreCase, IChunker chunker)
         {
             var model = new SemanticDiffPaneModel(base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker));
-            return PerformSemanticShifts(FindEffectiveAclChanges(model));
+            return PerformSemanticShifts(FindEffectiveAclChanges(model, ignoreRemovedDuplicateAcls));
         }
 
         private enum AclType
@@ -51,7 +52,7 @@ namespace SwitchConfigHelper
             Deny
         }
 
-        public SemanticDiffPaneModel FindEffectiveAclChanges(SemanticDiffPaneModel model)
+        public SemanticDiffPaneModel FindEffectiveAclChanges(SemanticDiffPaneModel model, bool ignoreRemovedDuplicateAcls)
         {
             if (!model.HasDifferences)
             {
@@ -69,6 +70,7 @@ namespace SwitchConfigHelper
 
                 var currentSectionRemovals = new List<EffectiveAclEntry>();
                 var currentSectionAdditions = new List<EffectiveAclEntry>();
+                var currentSectionUnchangeds = new List<EffectiveAclEntry>();
                 var previousSectionStart = -1;
                 var previousAclType = AclType.None;
 
@@ -108,20 +110,37 @@ namespace SwitchConfigHelper
                                 //Consider the inserted ACL only a changed line
                                 model.Lines[(model.Lines.IndexOf(additionAcl.Piece))].Type = ChangeType.Modified;
                             }
+                            //If a duplicate ACL was removed and should be ignored
+                            else if (ignoreRemovedDuplicateAcls
+                                && acl.Piece.Type == ChangeType.Deleted
+                                && currentSectionUnchangeds.Contains(acl))
+                            {
+                                var removalAcl = currentSectionRemovals.Find(a => a.Equals(acl));
+                                //Consider the removed ACL only a changed line
+                                model.Lines[(model.Lines.IndexOf(removalAcl.Piece))].Type = ChangeType.Modified;
+                            }
                         }
 
                         currentSectionRemovals.Clear();
                         currentSectionAdditions.Clear();
+                        currentSectionUnchangeds.Clear();
                     }
 
-                    //Add inserted or deleted ACLs for checking above
-                    if (currentLine.Type == ChangeType.Inserted && isAclSection(currentSection.Text) && currentLineAclType != AclType.None)
+                    //Add inserted, deleted, or unchanged ACLs for checking above
+                    if (isAclSection(currentSection.Text) && currentLineAclType != AclType.None)
                     {
-                        currentSectionAdditions.Add(new EffectiveAclEntry(currentLine));
-                    }
-                    else if (currentLine.Type == ChangeType.Deleted && isAclSection(currentSection.Text) && currentLineAclType != AclType.None)
-                    {
-                        currentSectionRemovals.Add(new EffectiveAclEntry(currentLine));
+                        switch (currentLine.Type)
+                        {
+                            case ChangeType.Inserted:
+                                currentSectionAdditions.Add(new EffectiveAclEntry(currentLine));
+                                break;
+                            case ChangeType.Deleted:
+                                currentSectionRemovals.Add(new EffectiveAclEntry(currentLine));
+                                break;
+                            case ChangeType.Unchanged:
+                                currentSectionUnchangeds.Add(new EffectiveAclEntry(currentLine));
+                                break;
+                        }
                     }
 
                     previousSectionStart = currentSectionStart;

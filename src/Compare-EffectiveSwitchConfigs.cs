@@ -97,6 +97,20 @@ namespace SwitchConfigHelper
         }
         private bool ignoreEqualAcls;
 
+        [Parameter(
+            Mandatory = false,
+            Position = 8,
+            ValueFromPipeline = false,
+            ValueFromPipelineByPropertyName = false)]
+        [Parameter(ParameterSetName = "Context")]
+        [Parameter(ParameterSetName = "Full")]
+        public SwitchParameter IgnoreRemovedDuplicateAcls
+        {
+            get { return ignoreRemovedDuplicateAcls; }
+            set { ignoreRemovedDuplicateAcls = value; }
+        }
+        private bool ignoreRemovedDuplicateAcls;
+
         protected override void BeginProcessing()
         {
 
@@ -109,7 +123,7 @@ namespace SwitchConfigHelper
             var diffBuilder = new SemanticInlineDiffBuilder(new Differ());
             SemanticDiffPaneModel diff;
             
-            diff = diffBuilder.BuildEffectiveDiffModel(referenceText, differenceText);
+            diff = diffBuilder.BuildEffectiveDiffModel(referenceText, differenceText, ignoreRemovedDuplicateAcls);
 
             string result;
             if (printFullDiff)
@@ -135,18 +149,6 @@ namespace SwitchConfigHelper
         protected override void EndProcessing()
         {
 
-        }
-    }
-}
-
-class ValidateContextParameter : ValidateArgumentsAttribute
-{
-    protected override void Validate(object arguments, EngineIntrinsics engineIntrinsics)
-    {
-        var context = (int)arguments;
-        if (context < 0)
-        {
-            throw new ArgumentOutOfRangeException();
         }
     }
 }
