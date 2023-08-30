@@ -46,7 +46,9 @@ namespace SwitchConfigHelper
                         currentSectionContextPrinted = false;
                     }
                     //new section
-                    else if (i == 0 || currentLine.SectionStartPosition > model.Lines[i - 1].SectionStartPosition)
+                    else if (i == 0
+                        || currentLine.SectionStartPosition > model.Lines[i - 1].SectionStartPosition
+                        || model.Lines[i - 1].SectionStartPosition == null)
                     {
                         currentSectionStart = model.Lines.IndexOf(model.Lines.Where(x => x.Position == currentLine.SectionStartPosition).First());
                         currentSection = model.Lines[(int)currentSectionStart].Text;
