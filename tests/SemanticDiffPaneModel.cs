@@ -88,6 +88,75 @@ namespace SwitchConfigHelper.Tests
 
                 semanticModel.Lines.Where(x => x.Type != ChangeType.Deleted).Should().BeInAscendingOrder(x => x.SectionStartPosition);
             }
+
+            [Fact]
+            public void DeletedSectionWithDeletedLineInSubsequentSection()
+            {
+                var originalModel = new DiffPaneModel();
+
+                originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan1", ChangeType.Unchanged, 1));
+                originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Unchanged, 2));
+                originalModel.Lines.Add(new DiffPiece("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns", ChangeType.Unchanged, 3));
+                originalModel.Lines.Add(new DiffPiece("!", ChangeType.Unchanged, 4));
+                originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan2", ChangeType.Deleted, null));
+                originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Deleted, null));
+                originalModel.Lines.Add(new DiffPiece("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns", ChangeType.Deleted, null));
+                originalModel.Lines.Add(new DiffPiece("!", ChangeType.Deleted, null));
+                originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan3", ChangeType.Unchanged, 5));
+                originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Unchanged, 6));
+                originalModel.Lines.Add(new DiffPiece("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns", ChangeType.Deleted, null));
+                originalModel.Lines.Add(new DiffPiece("!", ChangeType.Unchanged, 7));
+
+                var semanticModel = new SemanticDiffPaneModel(originalModel);
+
+                semanticModel.Should().BeOfType<SemanticDiffPaneModel>();
+                semanticModel.Lines.Should().AllBeOfType<SemanticDiffPiece>();
+                semanticModel.Lines.Should().HaveCount(originalModel.Lines.Count);
+
+                semanticModel.Lines.Where(x => x.Position <= 4)
+                    .Should().AllSatisfy(x => { x.SectionStartPosition.Should().Be(1); });
+                semanticModel.Lines.Where(x => x.Position >= 5)
+                    .Should().AllSatisfy(x => { x.SectionStartPosition.Should().Be(5); });
+                semanticModel.Lines.Where(x => x.Type == ChangeType.Deleted)
+                    .Should().SatisfyRespectively(
+                        line =>
+                        {
+                            line.Position.Should().BeNull();
+                            line.Text.Should().Be("ip access-list extended acl_vlan2");
+                            line.Type.Should().Be(ChangeType.Deleted);
+                            line.SectionStartPosition.Should().BeNull();
+                        },
+                        line =>
+                        {
+                            line.Position.Should().BeNull();
+                            line.Text.Should().Be("remark Allow DNS lookups");
+                            line.Type.Should().Be(ChangeType.Deleted);
+                            line.SectionStartPosition.Should().BeNull();
+                        },
+                        line =>
+                        {
+                            line.Position.Should().BeNull();
+                            line.Text.Should().Be("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns");
+                            line.Type.Should().Be(ChangeType.Deleted);
+                            line.SectionStartPosition.Should().BeNull();
+                        },
+                        line =>
+                        {
+                            line.Position.Should().BeNull();
+                            line.Text.Should().Be("!");
+                            line.Type.Should().Be(ChangeType.Deleted);
+                            line.SectionStartPosition.Should().BeNull();
+                        },
+                        line =>
+                        {
+                            line.Position.Should().BeNull();
+                            line.Text.Should().Be("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns");
+                            line.Type.Should().Be(ChangeType.Deleted);
+                            line.SectionStartPosition.Should().Be(5);
+                        });
+
+                semanticModel.Lines.Where(x => x.Type != ChangeType.Deleted).Should().BeInAscendingOrder(x => x.SectionStartPosition);
+            }
         }
     }
 }

@@ -150,10 +150,16 @@ namespace SwitchConfigHelper.Tests
                 model.Lines.Add(new SemanticDiffPiece("section 2", ChangeType.Deleted, null, null));
                 model.Lines.Add(new SemanticDiffPiece("statement 2.1", ChangeType.Deleted, null, null));
                 model.Lines.Add(new SemanticDiffPiece("!", ChangeType.Deleted, null, null));
+                model.Lines.Add(new SemanticDiffPiece("section 3", ChangeType.Unchanged, 4, 4));
+                model.Lines.Add(new SemanticDiffPiece("statement 3.1", ChangeType.Unchanged, 5, 4));
+                model.Lines.Add(new SemanticDiffPiece("statement 3.2", ChangeType.Deleted, 5, 4));
+                model.Lines.Add(new SemanticDiffPiece("!", ChangeType.Unchanged, 6, 4));
 
                 string expectedOutput = @"- section 2
 - statement 2.1
 - !
+  section 3
+- statement 3.2
 ";
 
                 var diffOutput = DiffFormatter.FormatDiff(model, false, 0, true, "", false);
