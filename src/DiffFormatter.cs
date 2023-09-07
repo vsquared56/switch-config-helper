@@ -62,8 +62,9 @@ namespace SwitchConfigHelper
                             || currentLine.Type == ChangeType.Deleted))
                     {
                         //print section information
-                        //note that section headers that are also included in previous context
-                        //are printed as section headers, not as previous context
+                        //Note that section headers that are also included in previous context
+                        //  are printed as section headers, not as previous context.
+                        //Section headers that are changed themselves are printed here, not as the current line below.
                         if (printSectionHeaders && !currentSectionContextPrinted && currentSectionStart != null)
                         {
                             //show trimmed lines before the current section header in the output, e.g. with "..."
@@ -98,8 +99,8 @@ namespace SwitchConfigHelper
                             }
                             lastForwardContext = i + context;
                         }
-                        //if no context is to be printed, print the current line
-                        else
+                        //if no context is to be printed and the line is not a section header, print the current line
+                        else if (lastPrintedLine < i)
                         {
                             AddFormattedOutputLine(ref result, model.Lines[i], includeLineNumbers, modifiedLinesAreUnchanged);
                             lastPrintedLine = i;
