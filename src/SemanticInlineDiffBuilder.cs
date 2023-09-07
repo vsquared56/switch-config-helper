@@ -168,17 +168,19 @@ namespace SwitchConfigHelper
                 //The first and last lines do not need to be checked
                 for (var changeStart = 1; changeStart < model.Lines.Count - 1; changeStart++)
                 {
-                    if (model.Lines[changeStart - 1].Type == ChangeType.Unchanged &&
-                        (model.Lines[changeStart].Type == ChangeType.Deleted || model.Lines[changeStart].Type == ChangeType.Inserted))
+                    if ((model.Lines[changeStart - 1].Type == ChangeType.Unchanged || model.Lines[changeStart - 1].Type == ChangeType.Modified)
+                        && (model.Lines[changeStart].Type == ChangeType.Deleted || model.Lines[changeStart].Type == ChangeType.Inserted))
                     {
                         var changeEnd = changeStart;
-                        while ((changeEnd < model.Lines.Count - 1) && (model.Lines[changeEnd + 1].Type == model.Lines[changeStart].Type))
+                        while ((changeEnd < model.Lines.Count - 1)
+                               && (model.Lines[changeEnd + 1].Type == model.Lines[changeStart].Type || model.Lines[changeEnd + 1].Type == ChangeType.Modified))
                         {
                             changeEnd++;
                         }
 
                         //A changed block surrounded by unchanged ones is a candidate for shifting left/right
-                        if (changeEnd < model.Lines.Count - 1 && model.Lines[changeEnd + 1].Type == ChangeType.Unchanged)
+                        if (changeEnd < model.Lines.Count - 1
+                            && (model.Lines[changeEnd + 1].Type == ChangeType.Unchanged || model.Lines[changeEnd + 1].Type == ChangeType.Modified))
                         {
                             List<SemanticDiffShift> potentialShifts = new List<SemanticDiffShift>();
                             var currentShift = 0;
@@ -217,11 +219,11 @@ namespace SwitchConfigHelper
                                 var newEnd = changeEnd + optimalShift;
                                 for (var i = Math.Min(newStart, changeStart); i <= Math.Max(newEnd, changeEnd); i++)
                                 {
-                                    if (i >= newStart && i <= newEnd)
+                                    if (i >= newStart && i <= newEnd && model.Lines[i].Type != ChangeType.Modified)
                                     {
                                         model.Lines[i].Type = currentChange;
                                     }
-                                    else
+                                    else if (model.Lines[i].Type != ChangeType.Modified)
                                     {
                                         model.Lines[i].Type = ChangeType.Unchanged;
                                     }
@@ -250,13 +252,15 @@ namespace SwitchConfigHelper
                 //if we're shifting left into still-unchanged lines
                 //and if the text to the left is identical to the last-changed line
                 return (changeStart + shiftAmount >= 0
-                        && model.Lines[changeStart + shiftAmount].Type == ChangeType.Unchanged
+                        && (model.Lines[changeStart + shiftAmount].Type == ChangeType.Unchanged
+                            || model.Lines[changeStart + shiftAmount].Type == ChangeType.Modified)
                         && model.Lines[changeStart + shiftAmount].Text == model.Lines[changeEnd + shiftAmount + 1].Text);
             }
             else if (shiftAmount > 0)
             {
                 return (changeEnd + shiftAmount < model.Lines.Count
-                        && model.Lines[changeEnd + shiftAmount].Type == ChangeType.Unchanged
+                        && (model.Lines[changeEnd + shiftAmount].Type == ChangeType.Unchanged
+                            || model.Lines[changeEnd + shiftAmount].Type == ChangeType.Modified)
                         && model.Lines[changeStart + shiftAmount - 1].Text == model.Lines[changeEnd + shiftAmount].Text);
             }
             return false;
