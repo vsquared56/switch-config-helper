@@ -35,14 +35,15 @@ namespace SwitchConfigHelper
         
         public new SemanticDiffPaneModel BuildDiffModel(string oldText, string newText, bool ignoreWhitespace, bool ignoreCase, IChunker chunker)
         {
-            var model = new SemanticDiffPaneModel(base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker));
-            return PerformSemanticShifts(model);
+            var model = PerformSemanticShifts(base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker));
+            return new SemanticDiffPaneModel(model);
         }
 
         public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText, bool ignoreRemovedDuplicateAcls, bool ignoreWhitespace, bool ignoreCase, IChunker chunker)
         {
-            var model = new SemanticDiffPaneModel(base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker));
-            return PerformSemanticShifts(FindEffectiveAclChanges(model, ignoreRemovedDuplicateAcls));
+            var model = PerformSemanticShifts(base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker));
+            var semanticModel = new SemanticDiffPaneModel(model);
+            return PerformSemanticShifts(FindEffectiveAclChanges(semanticModel, ignoreRemovedDuplicateAcls));
         }
 
         private enum AclType
@@ -154,9 +155,10 @@ namespace SwitchConfigHelper
             }
         }
 
+
         //Take the base diff model, and analyze if blocks of changes can be shifted left or right
         //for better semantic alignment.  See 3.2.2 in https://neil.fraser.name/writing/diff/ for inspiration
-        public SemanticDiffPaneModel PerformSemanticShifts(SemanticDiffPaneModel model)
+        public T PerformSemanticShifts<T>(T model) where T: DiffPaneModel
         {
             if (!model.HasDifferences)
             {
@@ -217,16 +219,54 @@ namespace SwitchConfigHelper
                                 var currentChange = model.Lines[changeStart].Type;
                                 var newStart = changeStart + optimalShift;
                                 var newEnd = changeEnd + optimalShift;
-                                for (var i = Math.Min(newStart, changeStart); i <= Math.Max(newEnd, changeEnd); i++)
+                                var modificationStart = Math.Min(newStart, changeStart);
+                                var modificationLength = Math.Abs(optimalShift);
+                                for (var i = modificationStart; i < modificationStart + modificationLength; i++)
                                 {
+                                    if (optimalShift < 0)
+                                    {
+                                        if (model.Lines[i].Type != ChangeType.Modified)
+                                        {
+                                            model.Lines[i].Type = currentChange;
+                                        }
+                                        if (model.Lines[i - optimalShift].Type != ChangeType.Modified)
+                                        {
+                                            model.Lines[i - optimalShift].Type = ChangeType.Unchanged;
+                                        }
+                                        if (currentChange == ChangeType.Deleted)
+                                        {
+                                            model.Lines[i - optimalShift].Position = model.Lines[i].Position;
+                                            model.Lines[i].Position = null;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (model.Lines[i].Type != ChangeType.Modified)
+                                        {
+                                            model.Lines[i].Type = ChangeType.Unchanged;
+                                        }
+                                        if (model.Lines[i + optimalShift].Type != ChangeType.Modified)
+                                        {
+                                            model.Lines[i + optimalShift].Type = currentChange;
+                                        }
+                                        if (currentChange == ChangeType.Deleted)
+                                        {
+                                            model.Lines[i].Position = model.Lines[i + optimalShift].Position;
+                                            model.Lines[i + optimalShift].Position = null;
+                                        }
+                                    }
+                                    /*
                                     if (i >= newStart && i <= newEnd && model.Lines[i].Type != ChangeType.Modified)
                                     {
                                         model.Lines[i].Type = currentChange;
+                                        //model.Lines[i].Position = model.Lines[i - optimalShift].Position;
                                     }
                                     else if (model.Lines[i].Type != ChangeType.Modified)
                                     {
                                         model.Lines[i].Type = ChangeType.Unchanged;
+                                        //model.Lines[i].Position = model.Lines[i + optimalShift].Position;
                                     }
+                                    */
                                     //keep going from the end of the shifted change
                                     changeStart = Math.Max(newEnd, changeEnd);
                                 }
@@ -240,7 +280,7 @@ namespace SwitchConfigHelper
 
         //This isn't intended to analyze an arbitrary shift.
         //Instead, start at 0 and call with increasing/decreasing shift amounts until an invalid shift
-        private bool isValidShift(SemanticDiffPaneModel model, int changeStart, int changeEnd, int shiftAmount)
+        private bool isValidShift<T>(T model, int changeStart, int changeEnd, int shiftAmount) where T: DiffPaneModel
         {
             if (shiftAmount == 0)
             {
