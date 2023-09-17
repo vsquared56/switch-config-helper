@@ -1182,4 +1182,407 @@ ip access-list extended acl_vlan3
             }
         }
     }
+
+    public class SemanticShiftTests
+    {
+        [Fact]
+        public void ShiftLeftDeletion()
+        {
+            var originalModel = new DiffPaneModel();
+
+            originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan1", ChangeType.Unchanged, 1));
+            originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Unchanged, 2));
+            originalModel.Lines.Add(new DiffPiece("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns", ChangeType.Unchanged, 3));
+            originalModel.Lines.Add(new DiffPiece("!", ChangeType.Unchanged, 4));
+            originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan2", ChangeType.Unchanged, 5));
+            originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Unchanged, 6));
+            originalModel.Lines.Add(new DiffPiece("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns", ChangeType.Deleted, null));
+            originalModel.Lines.Add(new DiffPiece("!", ChangeType.Deleted, null));
+            originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan2", ChangeType.Deleted, null));
+            originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Deleted, null));
+            originalModel.Lines.Add(new DiffPiece("permit udp 172.20.2.0 / 24 host 8.8.8.8 eq dns", ChangeType.Unchanged, 7));
+            originalModel.Lines.Add(new DiffPiece("!", ChangeType.Unchanged, 8));
+
+            var diffBuilder = new SemanticInlineDiffBuilder();
+            var shiftedModel = diffBuilder.PerformSemanticShifts(originalModel);
+
+            shiftedModel.Should().BeOfType<DiffPaneModel>();
+            shiftedModel.Lines.Should().AllBeOfType<DiffPiece>();
+            shiftedModel.Lines.Should().HaveCount(originalModel.Lines.Count);
+
+            shiftedModel.Lines.Should().SatisfyRespectively(
+                    line =>
+                    {
+                        line.Position.Should().Be(1);
+                        line.Text.Should().Be("ip access-list extended acl_vlan1");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(2);
+                        line.Text.Should().Be("remark Allow DNS lookups");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(3);
+                        line.Text.Should().Be("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(4);
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().BeNull();
+                        line.Text.Should().Be("ip access-list extended acl_vlan2");
+                        line.Type.Should().Be(ChangeType.Deleted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().BeNull();
+                        line.Text.Should().Be("remark Allow DNS lookups");
+                        line.Type.Should().Be(ChangeType.Deleted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().BeNull();
+                        line.Text.Should().Be("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Deleted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().BeNull();
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Deleted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(5);
+                        line.Text.Should().Be("ip access-list extended acl_vlan2");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(6);
+                        line.Text.Should().Be("remark Allow DNS lookups");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(7);
+                        line.Text.Should().Be("permit udp 172.20.2.0 / 24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(8);
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    });
+        }
+
+        [Fact]
+        public void ShiftLeftInsertion()
+        {
+            var originalModel = new DiffPaneModel();
+
+            originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan1", ChangeType.Unchanged, 1));
+            originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Unchanged, 2));
+            originalModel.Lines.Add(new DiffPiece("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns", ChangeType.Unchanged, 3));
+            originalModel.Lines.Add(new DiffPiece("!", ChangeType.Unchanged, 4));
+            originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan2", ChangeType.Unchanged, 5));
+            originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Unchanged, 6));
+            originalModel.Lines.Add(new DiffPiece("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns", ChangeType.Inserted, 7));
+            originalModel.Lines.Add(new DiffPiece("!", ChangeType.Inserted, 8));
+            originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan2", ChangeType.Inserted, 9));
+            originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Inserted, 10));
+            originalModel.Lines.Add(new DiffPiece("permit udp 172.20.2.0 / 24 host 8.8.8.8 eq dns", ChangeType.Unchanged, 11));
+            originalModel.Lines.Add(new DiffPiece("!", ChangeType.Unchanged, 12));
+
+            var diffBuilder = new SemanticInlineDiffBuilder();
+            var shiftedModel = diffBuilder.PerformSemanticShifts(originalModel);
+
+            shiftedModel.Should().BeOfType<DiffPaneModel>();
+            shiftedModel.Lines.Should().AllBeOfType<DiffPiece>();
+            shiftedModel.Lines.Should().HaveCount(originalModel.Lines.Count);
+
+            shiftedModel.Lines.Should().SatisfyRespectively(
+                    line =>
+                    {
+                        line.Position.Should().Be(1);
+                        line.Text.Should().Be("ip access-list extended acl_vlan1");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(2);
+                        line.Text.Should().Be("remark Allow DNS lookups");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(3);
+                        line.Text.Should().Be("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(4);
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(5);
+                        line.Text.Should().Be("ip access-list extended acl_vlan2");
+                        line.Type.Should().Be(ChangeType.Inserted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(6);
+                        line.Text.Should().Be("remark Allow DNS lookups");
+                        line.Type.Should().Be(ChangeType.Inserted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(7);
+                        line.Text.Should().Be("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Inserted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(8);
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Inserted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(9);
+                        line.Text.Should().Be("ip access-list extended acl_vlan2");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(10);
+                        line.Text.Should().Be("remark Allow DNS lookups");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(11);
+                        line.Text.Should().Be("permit udp 172.20.2.0 / 24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(12);
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    });
+        }
+
+        [Fact]
+        public void ShiftRightDeletion()
+        {
+            var originalModel = new DiffPaneModel();
+
+            originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan1", ChangeType.Unchanged, 1));
+            originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Unchanged, 2));
+            originalModel.Lines.Add(new DiffPiece("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns", ChangeType.Unchanged, 3));
+            originalModel.Lines.Add(new DiffPiece("!", ChangeType.Unchanged, 4));
+            originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan2", ChangeType.Unchanged, 5));
+            originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Unchanged, 6));
+            originalModel.Lines.Add(new DiffPiece("permit udp 172.20.2.0 / 24 host 8.8.8.8 eq dns", ChangeType.Deleted, null));
+            originalModel.Lines.Add(new DiffPiece("!", ChangeType.Deleted, null));
+            originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan3", ChangeType.Deleted, null));
+            originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Deleted, null));
+            originalModel.Lines.Add(new DiffPiece("permit udp 172.20.2.0 / 24 host 8.8.8.8 eq dns", ChangeType.Unchanged, 7));
+            originalModel.Lines.Add(new DiffPiece("!", ChangeType.Unchanged, 8));
+
+            var diffBuilder = new SemanticInlineDiffBuilder();
+            var shiftedModel = diffBuilder.PerformSemanticShifts(originalModel);
+
+            shiftedModel.Should().BeOfType<DiffPaneModel>();
+            shiftedModel.Lines.Should().AllBeOfType<DiffPiece>();
+            shiftedModel.Lines.Should().HaveCount(originalModel.Lines.Count);
+
+            shiftedModel.Lines.Should().SatisfyRespectively(
+                    line =>
+                    {
+                        line.Position.Should().Be(1);
+                        line.Text.Should().Be("ip access-list extended acl_vlan1");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(2);
+                        line.Text.Should().Be("remark Allow DNS lookups");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(3);
+                        line.Text.Should().Be("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(4);
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(5);
+                        line.Text.Should().Be("ip access-list extended acl_vlan2");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(6);
+                        line.Text.Should().Be("remark Allow DNS lookups");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(7);
+                        line.Text.Should().Be("permit udp 172.20.2.0 / 24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(8);
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().BeNull();
+                        line.Text.Should().Be("ip access-list extended acl_vlan3");
+                        line.Type.Should().Be(ChangeType.Deleted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().BeNull();
+                        line.Text.Should().Be("remark Allow DNS lookups");
+                        line.Type.Should().Be(ChangeType.Deleted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().BeNull();
+                        line.Text.Should().Be("permit udp 172.20.2.0 / 24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Deleted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().BeNull();
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Deleted);
+                    });
+        }
+
+        [Fact]
+        public void ShiftRightInsertion()
+        {
+            var originalModel = new DiffPaneModel();
+
+            originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan1", ChangeType.Unchanged, 1));
+            originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Unchanged, 2));
+            originalModel.Lines.Add(new DiffPiece("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns", ChangeType.Unchanged, 3));
+            originalModel.Lines.Add(new DiffPiece("!", ChangeType.Unchanged, 4));
+            originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan2", ChangeType.Unchanged, 5));
+            originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Unchanged, 6));
+            originalModel.Lines.Add(new DiffPiece("permit udp 172.20.2.0 / 24 host 8.8.8.8 eq dns", ChangeType.Inserted, 7));
+            originalModel.Lines.Add(new DiffPiece("!", ChangeType.Inserted, 8));
+            originalModel.Lines.Add(new DiffPiece("ip access-list extended acl_vlan3", ChangeType.Inserted, 9));
+            originalModel.Lines.Add(new DiffPiece("remark Allow DNS lookups", ChangeType.Inserted, 10));
+            originalModel.Lines.Add(new DiffPiece("permit udp 172.20.2.0 / 24 host 8.8.8.8 eq dns", ChangeType.Unchanged, 11));
+            originalModel.Lines.Add(new DiffPiece("!", ChangeType.Unchanged, 12));
+
+            var diffBuilder = new SemanticInlineDiffBuilder();
+            var shiftedModel = diffBuilder.PerformSemanticShifts(originalModel);
+
+            shiftedModel.Should().BeOfType<DiffPaneModel>();
+            shiftedModel.Lines.Should().AllBeOfType<DiffPiece>();
+            shiftedModel.Lines.Should().HaveCount(originalModel.Lines.Count);
+
+            shiftedModel.Lines.Should().SatisfyRespectively(
+                    line =>
+                    {
+                        line.Position.Should().Be(1);
+                        line.Text.Should().Be("ip access-list extended acl_vlan1");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(2);
+                        line.Text.Should().Be("remark Allow DNS lookups");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(3);
+                        line.Text.Should().Be("permit udp 172.20.1.0 / 24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(4);
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(5);
+                        line.Text.Should().Be("ip access-list extended acl_vlan2");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(6);
+                        line.Text.Should().Be("remark Allow DNS lookups");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(7);
+                        line.Text.Should().Be("permit udp 172.20.2.0 / 24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(8);
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(9);
+                        line.Text.Should().Be("ip access-list extended acl_vlan3");
+                        line.Type.Should().Be(ChangeType.Inserted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(10);
+                        line.Text.Should().Be("remark Allow DNS lookups");
+                        line.Type.Should().Be(ChangeType.Inserted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(11);
+                        line.Text.Should().Be("permit udp 172.20.2.0 / 24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Inserted);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(12);
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Inserted);
+                    });
+        }
+    }
 }

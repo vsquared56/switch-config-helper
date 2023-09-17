@@ -41,7 +41,7 @@ namespace SwitchConfigHelper
 
         public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText, bool ignoreRemovedDuplicateAcls, bool ignoreWhitespace, bool ignoreCase, IChunker chunker)
         {
-            var model = PerformSemanticShifts(base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker));
+            var model = PerformSemanticShifts(FindModifiedRemarkLines(base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker)));
             var semanticModel = new SemanticDiffPaneModel(model);
             return PerformSemanticShifts(FindEffectiveAclChanges(semanticModel, ignoreRemovedDuplicateAcls));
         }
@@ -53,7 +53,7 @@ namespace SwitchConfigHelper
             Deny
         }
 
-        public SemanticDiffPaneModel FindEffectiveAclChanges(SemanticDiffPaneModel model, bool ignoreRemovedDuplicateAcls)
+        public T FindModifiedRemarkLines<T>(T model) where T : DiffPaneModel
         {
             if (!model.HasDifferences)
             {
@@ -68,7 +68,18 @@ namespace SwitchConfigHelper
                 {
                     line.Type = ChangeType.Modified;
                 }
+                return model;
+            }
+        }
 
+        public SemanticDiffPaneModel FindEffectiveAclChanges(SemanticDiffPaneModel model, bool ignoreRemovedDuplicateAcls)
+        {
+            if (!model.HasDifferences)
+            {
+                return model;
+            }
+            else
+            {
                 var currentSectionRemovals = new List<EffectiveAclEntry>();
                 var currentSectionAdditions = new List<EffectiveAclEntry>();
                 var currentSectionUnchangeds = new List<EffectiveAclEntry>();
@@ -220,55 +231,74 @@ namespace SwitchConfigHelper
                                 var newStart = changeStart + optimalShift;
                                 var newEnd = changeEnd + optimalShift;
                                 var modificationStart = Math.Min(newStart, changeStart);
-                                var modificationLength = Math.Abs(optimalShift);
-                                for (var i = modificationStart; i < modificationStart + modificationLength; i++)
+                                var modificationEnd = Math.Max(newEnd, changeEnd);
+                                var shiftAmount = Math.Abs(optimalShift);
+
+                                //Save positions before they become modified
+                                List<int> savedPositions = new List<int>();
+                                var j = 0; //index into savedPositions
+                                for (var i = modificationStart; i <= modificationEnd; i++)
                                 {
+                                    if (model.Lines[i].Position != null)
+                                    {
+                                        savedPositions.Add(model.Lines[i].Position.GetValueOrDefault());
+                                    }
+                                }
+
+                                //Shift pieces
+                                for (var i = modificationStart; i <= modificationEnd; i++)
+                                {
+                                    //shift left
                                     if (optimalShift < 0)
                                     {
-                                        if (model.Lines[i].Type != ChangeType.Modified)
+                                        if (i < changeStart && model.Lines[i].Type != ChangeType.Modified)
                                         {
                                             model.Lines[i].Type = currentChange;
+                                            if (currentChange == ChangeType.Deleted)
+                                            {
+                                                model.Lines[i].Position = null;
+                                            }
                                         }
-                                        if (model.Lines[i - optimalShift].Type != ChangeType.Modified)
+                                        else if (i > newEnd && model.Lines[i].Type != ChangeType.Modified)
                                         {
-                                            model.Lines[i - optimalShift].Type = ChangeType.Unchanged;
+                                            model.Lines[i].Type = ChangeType.Unchanged;
+                                            if (currentChange == ChangeType.Deleted)
+                                            {
+                                                model.Lines[i].Position = savedPositions[j];
+                                                j++;
+                                            }
                                         }
-                                        if (currentChange == ChangeType.Deleted)
+                                        else if (currentChange == ChangeType.Deleted && model.Lines[i].Type == ChangeType.Modified)
                                         {
-                                            model.Lines[i - optimalShift].Position = model.Lines[i].Position;
-                                            model.Lines[i].Position = null;
+                                            model.Lines[i].Position = savedPositions[j];
+                                            j++;
                                         }
                                     }
                                     else
                                     {
-                                        if (model.Lines[i].Type != ChangeType.Modified)
+                                        if (i < newStart && model.Lines[i].Type != ChangeType.Modified)
                                         {
                                             model.Lines[i].Type = ChangeType.Unchanged;
+                                            if (currentChange == ChangeType.Deleted)
+                                            {
+                                                model.Lines[i].Position = savedPositions[j];
+                                                j++;
+                                            }
                                         }
-                                        if (model.Lines[i + optimalShift].Type != ChangeType.Modified)
+                                        else if (i > changeEnd && model.Lines[i].Type != ChangeType.Modified)
                                         {
-                                            model.Lines[i + optimalShift].Type = currentChange;
+                                            model.Lines[i].Type = currentChange;
+                                            if (currentChange == ChangeType.Deleted)
+                                            {
+                                                model.Lines[i].Position = null;
+                                            }
                                         }
-                                        if (currentChange == ChangeType.Deleted)
+                                        else if (currentChange == ChangeType.Deleted && model.Lines[i].Type == ChangeType.Modified)
                                         {
-                                            model.Lines[i].Position = model.Lines[i + optimalShift].Position;
-                                            model.Lines[i + optimalShift].Position = null;
+                                            model.Lines[i].Position = savedPositions[j];
+                                            j++;
                                         }
                                     }
-                                    /*
-                                    if (i >= newStart && i <= newEnd && model.Lines[i].Type != ChangeType.Modified)
-                                    {
-                                        model.Lines[i].Type = currentChange;
-                                        //model.Lines[i].Position = model.Lines[i - optimalShift].Position;
-                                    }
-                                    else if (model.Lines[i].Type != ChangeType.Modified)
-                                    {
-                                        model.Lines[i].Type = ChangeType.Unchanged;
-                                        //model.Lines[i].Position = model.Lines[i + optimalShift].Position;
-                                    }
-                                    */
-                                    //keep going from the end of the shifted change
-                                    changeStart = Math.Max(newEnd, changeEnd);
                                 }
                             }
                         }
