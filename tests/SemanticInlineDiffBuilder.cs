@@ -1180,6 +1180,125 @@ ip access-list extended acl_vlan3
                     }
                 );
             }
+
+            [Fact]
+            public void SemanticShiftAcrossSections()
+            {
+                string referenceText = @"ip access-list extended acl_vlan1
+  remark Allow TCP DNS lookups from primarie
+  permit tcp 172.20.1.0/24 host 8.8.8.8 eq dns
+!
+ip access-list extended acl_vlan2
+  remark Allow TCP DNS lookups from primary
+  permit tcp 172.20.1.0/24 host 8.8.8.8 eq dns
+!
+ip access-list extended acl_vlan3
+  remark Allow TCP DNS lookups from primary
+  permit tcp 172.20.3.0/24 host 8.8.8.8 eq dns
+!";
+
+                string differenceText = @"ip access-list extended acl_vlan1
+  remark Allow TCP DNS lookups from primary
+  permit tcp 172.20.1.0/24 host 8.8.8.8 eq dns
+!
+ip access-list extended acl_vlan3
+  remark Allow TCP DNS lookups from primary
+  permit tcp 172.20.3.0/24 host 8.8.8.8 eq dns
+!";
+
+                var diffBuilder = new SemanticInlineDiffBuilder(new Differ());
+                var diff = diffBuilder.BuildEffectiveDiffModel(referenceText, differenceText, true);
+
+                diff.Should().BeOfType<SemanticDiffPaneModel>();
+                diff.Lines.Should().AllBeOfType<SemanticDiffPiece>();
+                diff.Lines.Should().HaveCount(11);
+                diff.Lines.Where(x => x.Type != ChangeType.Deleted).Should().OnlyHaveUniqueItems(x => x.Position);
+                diff.Lines.Where(x => x.Type != ChangeType.Deleted).Should().BeInAscendingOrder(x => x.Position);
+                diff.Lines.Should().BeInAscendingOrder(x => x.SectionStartPosition);
+
+                diff.Lines.Where(x => x.Text.Trim().StartsWith("remark"))
+                    .Should().AllSatisfy(x => x.Type.Should().BeOneOf(ChangeType.Unchanged, ChangeType.Modified));
+
+                diff.Lines.Should().SatisfyRespectively(
+                    line =>
+                    {
+                        line.Position.Should().Be(1);
+                        line.Text.Should().Be("ip access-list extended acl_vlan1");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                        line.SectionStartPosition.Should().Be(1);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(2);
+                        line.Text.Should().Be("  remark Allow TCP DNS lookups from primary");
+                        line.Type.Should().Be(ChangeType.Modified);
+                        line.SectionStartPosition.Should().Be(1);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(3);
+                        line.Text.Should().Be("  permit tcp 172.20.1.0/24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                        line.SectionStartPosition.Should().Be(1);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(4);
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                        line.SectionStartPosition.Should().Be(1);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().BeNull();
+                        line.Text.Should().Be("ip access-list extended acl_vlan2");
+                        line.Type.Should().Be(ChangeType.Deleted);
+                        line.SectionStartPosition.Should().BeNull();
+                    },
+                    line =>
+                    {
+                        line.Position.Should().BeNull();
+                        line.Text.Should().Be("  permit tcp 172.20.1.0/24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Deleted);
+                        line.SectionStartPosition.Should().BeNull();
+                    },
+                    line =>
+                    {
+                        line.Position.Should().BeNull();
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Deleted);
+                        line.SectionStartPosition.Should().BeNull();
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(5);
+                        line.Text.Should().Be("ip access-list extended acl_vlan3");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                        line.SectionStartPosition.Should().Be(5);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(6);
+                        line.Text.Should().Be("  remark Allow TCP DNS lookups from primary");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                        line.SectionStartPosition.Should().Be(5);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(7);
+                        line.Text.Should().Be("  permit tcp 172.20.1.0/24 host 8.8.8.8 eq dns");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                        line.SectionStartPosition.Should().Be(5);
+                    },
+                    line =>
+                    {
+                        line.Position.Should().Be(8);
+                        line.Text.Should().Be("!");
+                        line.Type.Should().Be(ChangeType.Unchanged);
+                        line.SectionStartPosition.Should().Be(5);
+                    }
+                );
+            }
         }
     }
 
