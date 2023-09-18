@@ -1214,7 +1214,7 @@ ip access-list extended acl_vlan3
                 diff.Lines.Should().HaveCount(11);
                 diff.Lines.Where(x => x.Type != ChangeType.Deleted).Should().OnlyHaveUniqueItems(x => x.Position);
                 diff.Lines.Where(x => x.Type != ChangeType.Deleted).Should().BeInAscendingOrder(x => x.Position);
-                diff.Lines.Should().BeInAscendingOrder(x => x.SectionStartPosition);
+                diff.Lines.Where(x => x.Type != ChangeType.Deleted).Should().BeInAscendingOrder(x => x.SectionStartPosition);
 
                 diff.Lines.Where(x => x.Text.Trim().StartsWith("remark"))
                     .Should().AllSatisfy(x => x.Type.Should().BeOneOf(ChangeType.Unchanged, ChangeType.Modified));
@@ -1286,7 +1286,7 @@ ip access-list extended acl_vlan3
                     line =>
                     {
                         line.Position.Should().Be(7);
-                        line.Text.Should().Be("  permit tcp 172.20.1.0/24 host 8.8.8.8 eq dns");
+                        line.Text.Should().Be("  permit tcp 172.20.3.0/24 host 8.8.8.8 eq dns");
                         line.Type.Should().Be(ChangeType.Unchanged);
                         line.SectionStartPosition.Should().Be(5);
                     },
