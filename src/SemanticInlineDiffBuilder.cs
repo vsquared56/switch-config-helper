@@ -23,25 +23,30 @@ namespace SwitchConfigHelper
 
         public new SemanticDiffPaneModel BuildDiffModel(string oldText, string newText, bool ignoreWhitespace)
         {
-            var chunker = new LineChunker();
+            var chunker = new SectionPreservingChunker();
             return BuildDiffModel(oldText, newText, ignoreWhitespace, false, chunker);
         }
 
         public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText, bool ignoreRemovedDuplicateAcls, bool ignoreWhitespace)
         {
-            var chunker = new LineChunker();
+            var chunker = new SectionPreservingChunker();
             return BuildEffectiveDiffModel(oldText, newText, ignoreRemovedDuplicateAcls, ignoreWhitespace, false, chunker);
         }
         
         public new SemanticDiffPaneModel BuildDiffModel(string oldText, string newText, bool ignoreWhitespace, bool ignoreCase, IChunker chunker)
         {
-            var model = PerformSemanticShifts(base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker));
-            return new SemanticDiffPaneModel(model);
+            var model = base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker);
+            model = RemoveSectionInformation(model);
+            model = PerformSemanticShifts(model);
+            return RemoveSectionInformation(new SemanticDiffPaneModel(model));
         }
 
         public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText, bool ignoreRemovedDuplicateAcls, bool ignoreWhitespace, bool ignoreCase, IChunker chunker)
         {
-            var model = PerformSemanticShifts(FindModifiedRemarkLines(base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker)));
+            var model = base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker);
+            model = RemoveSectionInformation(model);
+            model = FindModifiedRemarkLines(model);
+            model = PerformSemanticShifts(model);
             var semanticModel = new SemanticDiffPaneModel(model);
             return PerformSemanticShifts(FindEffectiveAclChanges(semanticModel, ignoreRemovedDuplicateAcls));
         }
@@ -166,6 +171,14 @@ namespace SwitchConfigHelper
             }
         }
 
+        public T RemoveSectionInformation<T>(T model) where T : DiffPaneModel
+        {
+            for (var i = 0; i < model.Lines.Count; i++)
+            {
+                model.Lines[i].Text = SectionPreservingLineModifier.RemoveSectionInformation(model.Lines[i].Text);
+            }
+            return model;
+        }
 
         //Take the base diff model, and analyze if blocks of changes can be shifted left or right
         //for better semantic alignment.  See 3.2.2 in https://neil.fraser.name/writing/diff/ for inspiration
