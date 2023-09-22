@@ -23,26 +23,32 @@ namespace SwitchConfigHelper
 
         public new SemanticDiffPaneModel BuildDiffModel(string oldText, string newText, bool ignoreWhitespace)
         {
-            var chunker = new LineChunker();
+            var chunker = new SectionPreservingChunker();
             return BuildDiffModel(oldText, newText, ignoreWhitespace, false, chunker);
         }
 
         public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText, bool ignoreRemovedDuplicateAcls, bool ignoreWhitespace)
         {
-            var chunker = new LineChunker();
+            var chunker = new SectionPreservingChunker();
             return BuildEffectiveDiffModel(oldText, newText, ignoreRemovedDuplicateAcls, ignoreWhitespace, false, chunker);
         }
         
         public new SemanticDiffPaneModel BuildDiffModel(string oldText, string newText, bool ignoreWhitespace, bool ignoreCase, IChunker chunker)
         {
-            var model = new SemanticDiffPaneModel(base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker));
-            return PerformSemanticShifts(model);
+            var model = base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker);
+            model = RemoveSectionInformation(model);
+            model = PerformSemanticShifts(model);
+            return RemoveSectionInformation(new SemanticDiffPaneModel(model));
         }
 
         public SemanticDiffPaneModel BuildEffectiveDiffModel(string oldText, string newText, bool ignoreRemovedDuplicateAcls, bool ignoreWhitespace, bool ignoreCase, IChunker chunker)
         {
-            var model = new SemanticDiffPaneModel(base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker));
-            return PerformSemanticShifts(FindEffectiveAclChanges(model, ignoreRemovedDuplicateAcls));
+            var model = base.BuildDiffModel(oldText, newText, ignoreWhitespace, ignoreCase, chunker);
+            model = RemoveSectionInformation(model);
+            model = FindModifiedRemarkLines(model);
+            model = PerformSemanticShifts(model);
+            var semanticModel = new SemanticDiffPaneModel(model);
+            return PerformSemanticShifts(FindEffectiveAclChanges(semanticModel, ignoreRemovedDuplicateAcls));
         }
 
         private enum AclType
@@ -52,7 +58,7 @@ namespace SwitchConfigHelper
             Deny
         }
 
-        public SemanticDiffPaneModel FindEffectiveAclChanges(SemanticDiffPaneModel model, bool ignoreRemovedDuplicateAcls)
+        public T FindModifiedRemarkLines<T>(T model) where T : DiffPaneModel
         {
             if (!model.HasDifferences)
             {
@@ -67,7 +73,18 @@ namespace SwitchConfigHelper
                 {
                     line.Type = ChangeType.Modified;
                 }
+                return model;
+            }
+        }
 
+        public SemanticDiffPaneModel FindEffectiveAclChanges(SemanticDiffPaneModel model, bool ignoreRemovedDuplicateAcls)
+        {
+            if (!model.HasDifferences)
+            {
+                return model;
+            }
+            else
+            {
                 var currentSectionRemovals = new List<EffectiveAclEntry>();
                 var currentSectionAdditions = new List<EffectiveAclEntry>();
                 var currentSectionUnchangeds = new List<EffectiveAclEntry>();
@@ -154,9 +171,18 @@ namespace SwitchConfigHelper
             }
         }
 
+        public T RemoveSectionInformation<T>(T model) where T : DiffPaneModel
+        {
+            for (var i = 0; i < model.Lines.Count; i++)
+            {
+                model.Lines[i].Text = SectionPreservingLineModifier.RemoveSectionInformation(model.Lines[i].Text);
+            }
+            return model;
+        }
+
         //Take the base diff model, and analyze if blocks of changes can be shifted left or right
         //for better semantic alignment.  See 3.2.2 in https://neil.fraser.name/writing/diff/ for inspiration
-        public SemanticDiffPaneModel PerformSemanticShifts(SemanticDiffPaneModel model)
+        public T PerformSemanticShifts<T>(T model) where T: DiffPaneModel
         {
             if (!model.HasDifferences)
             {
@@ -217,18 +243,75 @@ namespace SwitchConfigHelper
                                 var currentChange = model.Lines[changeStart].Type;
                                 var newStart = changeStart + optimalShift;
                                 var newEnd = changeEnd + optimalShift;
-                                for (var i = Math.Min(newStart, changeStart); i <= Math.Max(newEnd, changeEnd); i++)
+                                var modificationStart = Math.Min(newStart, changeStart);
+                                var modificationEnd = Math.Max(newEnd, changeEnd);
+                                var shiftAmount = Math.Abs(optimalShift);
+
+                                //Save positions before they become modified
+                                List<int> savedPositions = new List<int>();
+                                var j = 0; //index into savedPositions
+                                for (var i = modificationStart; i <= modificationEnd; i++)
                                 {
-                                    if (i >= newStart && i <= newEnd && model.Lines[i].Type != ChangeType.Modified)
+                                    if (model.Lines[i].Position != null)
                                     {
-                                        model.Lines[i].Type = currentChange;
+                                        savedPositions.Add(model.Lines[i].Position.GetValueOrDefault());
                                     }
-                                    else if (model.Lines[i].Type != ChangeType.Modified)
+                                }
+
+                                //Shift pieces
+                                for (var i = modificationStart; i <= modificationEnd; i++)
+                                {
+                                    //shift left
+                                    if (optimalShift < 0)
                                     {
-                                        model.Lines[i].Type = ChangeType.Unchanged;
+                                        if (i < changeStart && model.Lines[i].Type != ChangeType.Modified)
+                                        {
+                                            model.Lines[i].Type = currentChange;
+                                            if (currentChange == ChangeType.Deleted)
+                                            {
+                                                model.Lines[i].Position = null;
+                                            }
+                                        }
+                                        else if (i > newEnd && model.Lines[i].Type != ChangeType.Modified)
+                                        {
+                                            model.Lines[i].Type = ChangeType.Unchanged;
+                                            if (currentChange == ChangeType.Deleted)
+                                            {
+                                                model.Lines[i].Position = savedPositions[j];
+                                                j++;
+                                            }
+                                        }
+                                        else if (currentChange == ChangeType.Deleted && model.Lines[i].Type == ChangeType.Modified)
+                                        {
+                                            model.Lines[i].Position = savedPositions[j];
+                                            j++;
+                                        }
                                     }
-                                    //keep going from the end of the shifted change
-                                    changeStart = Math.Max(newEnd, changeEnd);
+                                    else
+                                    {
+                                        if (i < newStart && model.Lines[i].Type != ChangeType.Modified)
+                                        {
+                                            model.Lines[i].Type = ChangeType.Unchanged;
+                                            if (currentChange == ChangeType.Deleted)
+                                            {
+                                                model.Lines[i].Position = savedPositions[j];
+                                                j++;
+                                            }
+                                        }
+                                        else if (i > changeEnd && model.Lines[i].Type != ChangeType.Modified)
+                                        {
+                                            model.Lines[i].Type = currentChange;
+                                            if (currentChange == ChangeType.Deleted)
+                                            {
+                                                model.Lines[i].Position = null;
+                                            }
+                                        }
+                                        else if (currentChange == ChangeType.Deleted && model.Lines[i].Type == ChangeType.Modified)
+                                        {
+                                            model.Lines[i].Position = savedPositions[j];
+                                            j++;
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -240,7 +323,7 @@ namespace SwitchConfigHelper
 
         //This isn't intended to analyze an arbitrary shift.
         //Instead, start at 0 and call with increasing/decreasing shift amounts until an invalid shift
-        private bool isValidShift(SemanticDiffPaneModel model, int changeStart, int changeEnd, int shiftAmount)
+        private bool isValidShift<T>(T model, int changeStart, int changeEnd, int shiftAmount) where T: DiffPaneModel
         {
             if (shiftAmount == 0)
             {

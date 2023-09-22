@@ -23,6 +23,7 @@ namespace SwitchConfigHelper
 
             if (firstPiece.Contains("!")) { Score--; } //Diffs that start with a section terminator are less optimal
             if (lastPiece.Contains("!")) { Score++; } //Diffs that end with a section terminator are more optimal
+            if (precedingPiece != null && precedingPiece.Contains("!")) { Score++; } //Diffs that start after a section terminator are more optimal
             if (firstPiece.Length == 0) { Score++; } //Diffs that start with a newline are more optimal
             if (precedingPiece == null || followingPiece == null) { Score++; } //Diffs at the very start or end of a file are more optimal
 
