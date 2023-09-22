@@ -1,9 +1,10 @@
 using System;
+using System.Collections.Generic;
 using DiffPlex.DiffBuilder.Model;
 
 namespace SwitchConfigHelper
 {
-    public class SemanticDiffPiece : DiffPiece, IEquatable<DiffPiece>
+    public class SemanticDiffPiece : DiffPiece, IEquatable<SemanticDiffPiece>
     {
         public int? SectionStartPosition { get; set; }
         public SemanticDiffPiece(string text, ChangeType type, int? position = null)
@@ -28,6 +29,11 @@ namespace SwitchConfigHelper
             Position = piece.Position;
             Type = piece.Type;
             SectionStartPosition = null;
+        }
+
+        public bool Equals(SemanticDiffPiece other)
+        {
+            return base.Equals(other) && EqualityComparer<int?>.Default.Equals(SectionStartPosition, other.SectionStartPosition);
         }
     }
 }
