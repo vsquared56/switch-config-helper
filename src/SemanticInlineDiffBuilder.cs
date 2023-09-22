@@ -144,7 +144,7 @@ namespace SwitchConfigHelper
                     }
 
                     //Add inserted, deleted, or unchanged ACLs for checking above
-                    if (isAclSection(currentSection.Text) && currentLineAclType != AclType.None)
+                    if (isAclSection(currentSection.Text) && currentLineAclType != AclType.None && currentSection != null)
                     {
                         switch (currentLine.Type)
                         {
